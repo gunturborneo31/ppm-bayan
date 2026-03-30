@@ -19,7 +19,7 @@ class PeriodeController extends Controller
     {
         $data = $request->validate([
             'tahun'     => 'required|integer|min:2020|max:2099',
-            'triwulan'  => 'required|in:Q1,Q2,Q3,Q4',
+            'triwulan'  => 'required|in:Tw 1,Tw 2,Tw 3,Tw 4',
             'status'    => 'boolean',
         ]);
         Periode::create($data);
@@ -30,7 +30,7 @@ class PeriodeController extends Controller
     {
         $data = $request->validate([
             'tahun'     => 'required|integer|min:2020|max:2099',
-            'triwulan'  => 'required|in:Q1,Q2,Q3,Q4',
+            'triwulan'  => 'required|in:Tw 1,Tw 2,Tw 3,Tw 4',
             'status'    => 'boolean',
         ]);
         $periode->update($data);

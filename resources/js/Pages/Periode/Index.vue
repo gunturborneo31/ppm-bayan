@@ -4,21 +4,21 @@
       <button @click="openCreate" class="btn-primary">+ Tambah Periode</button>
     </template>
 
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-auto max-h-[75vh]">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b">
+        <thead class="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Tahun</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Triwulan</th>
-            <th class="text-center px-4 py-3 font-medium text-gray-600">Status</th>
-            <th class="px-4 py-3" />
+            <th class="sticky top-0 z-10 text-left px-4 py-3 font-medium text-gray-600 bg-gray-50">Tahun</th>
+            <th class="sticky top-0 z-10 text-left px-4 py-3 font-medium text-gray-600 bg-gray-50">Triwulan</th>
+            <th class="sticky top-0 z-10 text-center px-4 py-3 font-medium text-gray-600 bg-gray-50">Status</th>
+            <th class="sticky top-0 z-10 px-4 py-3 bg-gray-50" />
           </tr>
         </thead>
         <tbody class="divide-y">
           <tr v-for="p in periodes" :key="p.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium text-gray-800">{{ p.tahun }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">{{ p.triwulan }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background:rgba(215,86,30,0.1);color:#D7561E">{{ p.triwulan }}</span>
             </td>
             <td class="px-4 py-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-xs" :class="p.status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">
@@ -27,8 +27,8 @@
             </td>
             <td class="px-4 py-3">
               <div class="flex gap-2 justify-end">
-                <button @click="openEdit(p)" class="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
-                <button @click="confirmDelete(p)" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
+                <button @click="openEdit(p)" class="text-gray-500 hover:text-gray-700 text-xs">Edit</button>
+                <button @click="confirmDelete(p)" class="text-red-500 hover:text-red-700 text-xs">Hapus</button>
               </div>
             </td>
           </tr>
@@ -51,10 +51,10 @@
             <label class="label">Triwulan</label>
             <select v-model="form.triwulan" class="input" :class="{'input-error': form.errors.triwulan}">
               <option value="">-- Pilih --</option>
-              <option value="Q1">Q1 (Jan–Mar)</option>
-              <option value="Q2">Q2 (Apr–Jun)</option>
-              <option value="Q3">Q3 (Jul–Sep)</option>
-              <option value="Q4">Q4 (Okt–Des)</option>
+              <option value="Tw 1">Tw 1 (Jan–Mar)</option>
+              <option value="Tw 2">Tw 2 (Apr–Jun)</option>
+              <option value="Tw 3">Tw 3 (Jul–Sep)</option>
+              <option value="Tw 4">Tw 4 (Okt–Des)</option>
             </select>
             <p v-if="form.errors.triwulan" class="err">{{ form.errors.triwulan }}</p>
           </div>
@@ -90,9 +90,9 @@ import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({ periodes: Array })
 const showModal = ref(false), showDeleteModal = ref(false), editing = ref(null), deleting = ref(null)
-const form = useForm({ tahun: new Date().getFullYear(), triwulan: '', status: true })
+const form = useForm({ tahun: new Date().getFullYear(), triwulan: 'Tw 1', status: true })
 
-function openCreate() { editing.value = null; form.reset(); form.tahun = new Date().getFullYear(); form.status = true; showModal.value = true }
+function openCreate() { editing.value = null; form.reset(); form.tahun = new Date().getFullYear(); form.triwulan = 'Tw 1'; form.status = true; showModal.value = true }
 function openEdit(p) { editing.value = p; form.tahun = p.tahun; form.triwulan = p.triwulan; form.status = p.status; showModal.value = true }
 function closeModal() { showModal.value = false; form.clearErrors() }
 function save() {

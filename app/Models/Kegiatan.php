@@ -2,13 +2,14 @@
 namespace App\Models;
 
 use App\Enums\KegiatanStatus;
+use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kegiatan extends Model {
     use SoftDeletes;
 
-    protected $fillable = ['program_id','divisi_id','nama','deskripsi','target_output','rencana_biaya','status','version','catatan_revisi'];
+    protected $fillable = ['program_id','divisi_id','nama','deskripsi','target_output','satuan','rencana_biaya','status','version','catatan_revisi'];
     protected $casts = ['status' => KegiatanStatus::class];
 
     public function program() { return $this->belongsTo(Program::class); }
@@ -16,6 +17,7 @@ class Kegiatan extends Model {
     public function realisasis() { return $this->hasMany(Realisasi::class); }
     public function files() { return $this->hasMany(FileLampiran::class); }
     public function pilars() { return $this->belongsToMany(Pilar::class, 'kegiatan_pilar'); }
+    public function activityLogs() { return $this->hasMany(ActivityLog::class, 'subject_id')->where('subject_type', self::class); }
 
     public function getProgressAttribute(): float {
         if (!$this->target_output || $this->target_output == 0) return 0;

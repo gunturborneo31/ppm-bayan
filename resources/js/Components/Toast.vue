@@ -2,7 +2,7 @@
   <div class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
     <transition-group name="toast" tag="div" class="space-y-2">
       <div v-for="t in toasts" :key="t.id"
-        class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg text-sm max-w-sm"
+        class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-sm text-sm max-w-sm"
         :class="cls(t.type)">
         <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path v-if="t.type==='success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -32,9 +32,9 @@ function add(message, type = 'success') {
 }
 
 function cls(type) {
-  return { success: 'bg-green-50 text-green-800 border border-green-200',
-           error:   'bg-red-50 text-red-800 border border-red-200',
-           warning: 'bg-yellow-50 text-yellow-800 border border-yellow-200' }[type] || 'bg-gray-50 text-gray-800'
+  return { success: 'bg-white text-green-700 border border-green-200',
+           error:   'bg-white text-red-700 border border-red-200',
+           warning: 'bg-white text-yellow-700 border border-yellow-200' }[type] || 'bg-white text-gray-700 border border-gray-200'
 }
 
 watch(() => page.props.flash, (f) => {

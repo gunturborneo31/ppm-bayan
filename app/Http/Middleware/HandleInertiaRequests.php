@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Kegiatan;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -25,6 +26,7 @@ class HandleInertiaRequests extends Middleware
                     'role'          => $request->user()->role,
                     'divisi_id'     => $request->user()->divisi_id,
                     'is_superadmin' => $request->user()->isSuperadmin(),
+                    'is_cdo'        => $request->user()->isCdo(),
                 ] : null,
             ],
             'flash' => [
@@ -32,6 +34,9 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
+            'pending_verification_count' => fn () => $request->user() && $request->user()->isCdo()
+                ? Kegiatan::where('status', 'diajukan')->count()
+                : 0,
         ]);
     }
 }

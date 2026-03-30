@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Activity Log">
-    <div class="bg-white rounded-xl shadow-sm border">
-      <div class="px-6 py-4 border-b flex items-center justify-between">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
         <h3 class="font-semibold text-gray-800">Riwayat Aktivitas</h3>
         <p class="text-sm text-gray-500">{{ logs.total }} entri</p>
       </div>
@@ -29,15 +29,15 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="logs.last_page > 1" class="px-6 py-4 border-t flex items-center justify-between">
+      <div v-if="logs.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
         <p class="text-sm text-gray-500">
           Halaman {{ logs.current_page }} dari {{ logs.last_page }}
         </p>
         <div class="flex gap-2">
-          <Link v-if="logs.prev_page_url" :href="logs.prev_page_url" class="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50">
+          <Link v-if="logs.prev_page_url" :href="logs.prev_page_url" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
             ← Sebelumnya
           </Link>
-          <Link v-if="logs.next_page_url" :href="logs.next_page_url" class="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50">
+          <Link v-if="logs.next_page_url" :href="logs.next_page_url" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
             Berikutnya →
           </Link>
         </div>
@@ -56,14 +56,14 @@ function formatDate(d) {
   return new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 function actionColor(action) {
-  return { create: 'bg-green-500', update: 'bg-blue-500', delete: 'bg-red-500',
+  return { create: 'bg-green-500', update: 'bg-amber-500', delete: 'bg-red-500',
            approve: 'bg-green-600', reject: 'bg-red-600', revisi: 'bg-yellow-500',
-           submit: 'bg-blue-400', upload: 'bg-purple-500' }[action] || 'bg-gray-400'
+           submit: 'bg-orange-500', upload: 'bg-purple-500' }[action] || 'bg-gray-400'
 }
 function actionBadge(action) {
-  return { create: 'bg-green-100 text-green-700', update: 'bg-blue-100 text-blue-700',
+  return { create: 'bg-green-100 text-green-700', update: 'bg-amber-100 text-amber-700',
            delete: 'bg-red-100 text-red-700', approve: 'bg-green-100 text-green-700',
            reject: 'bg-red-100 text-red-700', revisi: 'bg-yellow-100 text-yellow-700',
-           submit: 'bg-blue-100 text-blue-700', upload: 'bg-purple-100 text-purple-700' }[action] || 'bg-gray-100 text-gray-700'
+           submit: 'bg-orange-100 text-orange-700', upload: 'bg-purple-100 text-purple-700' }[action] || 'bg-gray-100 text-gray-700'
 }
 </script>

@@ -1,52 +1,106 @@
 <template>
   <AppLayout title="Program">
     <template #header-actions>
-      <button @click="openCreate" class="btn-primary">+ Tambah Program</button>
+      <button @click="openCreate" class="px-3 py-2 rounded border border-gray-300 bg-white font-bold text-gray-800 hover:bg-gray-100 cursor-pointer">+ Tambah Program</button>
     </template>
 
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b">
-          <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Nama Program</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Satuan</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Rencana Biaya</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Terpakai</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Sisa</th>
-            <th class="text-center px-4 py-3 font-medium text-gray-600">Kegiatan</th>
-            <th class="px-4 py-3" />
-          </tr>
-        </thead>
-        <tbody class="divide-y">
-          <tr v-for="p in programs" :key="p.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">
-              <p class="font-medium text-gray-800">{{ p.nama }}</p>
-              <p class="text-xs text-gray-500">{{ p.deskripsi }}</p>
-            </td>
-            <td class="px-4 py-3 text-gray-600">{{ p.satuan }}</td>
-            <td class="px-4 py-3 text-right text-gray-700">{{ fmt(p.rencana_biaya) }}</td>
-            <td class="px-4 py-3 text-right text-gray-700">{{ fmt(p.total_kegiatan_biaya) }}</td>
-            <td class="px-4 py-3 text-right" :class="p.sisa_anggaran < 0 ? 'text-red-600 font-medium' : 'text-green-600'">
-              {{ fmt(p.sisa_anggaran) }}
-            </td>
-            <td class="px-4 py-3 text-center">
-              <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ p.kegiatans_count }}</span>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex gap-2 justify-end">
-                <button @click="openEdit(p)" class="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
-                <button @click="confirmDelete(p)" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="programs.length === 0">
-            <td colspan="7" class="px-4 py-8 text-center text-gray-400">Belum ada program.</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Color Legend -->
+     <div class="mb-4 flex gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+      <div>
+          <span class="text-xs text-gray-600">Keterangan Warna : </span>
+      </div>
+      <div class="flex gap-6">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded bg-white border border-gray-300"></div>
+          <span class="text-xs text-gray-600">Program</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded" style="background:#4B9FD9"></div>
+          <span class="text-xs text-gray-600">Kegiatan</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Create/Edit Modal -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1400px] text-sm">
+          <thead>
+            <tr class="bg-orange-500 text-white text-xs font-medium">
+              <th class="px-4 py-2 text-left">Divisi / Unit</th>
+              <th class="px-4 py-2 text-left">Kode Ref</th>
+              <th class="px-4 py-2 text-left">Nama Program / Kegiatan</th>
+              <th class="px-4 py-2 text-right">Rencana Biaya</th>
+              <th class="px-4 py-2 text-left">Deskripsi</th>
+              <th class="px-4 py-2 text-center">Target Output</th>
+              <th class="px-4 py-2 text-center">Satuan</th>
+              <th class="px-4 py-2 text-center">Pilar Terkait</th>
+              <th class="px-4 py-2 text-left">Status / Anggaran</th>
+              <th class="px-4 py-2 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <template v-for="p in programs" :key="p.id">
+              <tr class="bg-white hover:bg-gray-50 border-b border-gray-100">
+                <td class="px-4 py-3 text-center text-gray-400">-</td>
+                <td class="px-4 py-3 font-mono text-sm text-gray-600">{{ rekCode('PRG', p.id) }}</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-gray-800">
+                    <Link :href="route('program.show', p.id)" class="hover:underline" style="color:#D7561E">{{ p.nama }}</Link>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ p.kegiatans?.length || 0 }} kegiatan · {{ countByStatus(p, 'disetujui') }} disetujui</p>
+                </td>
+                <td class="px-4 py-3 text-right font-medium text-gray-800 whitespace-nowrap">Rp {{ amount(p.rencana_biaya) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ p.deskripsi || '-' }}</td>
+                <td class="px-4 py-3 text-center text-gray-600">{{ p.target_output ?? '-' }}</td>
+                <td class="px-4 py-3 text-center text-gray-600">{{ p.satuan || '-' }}</td>
+                <td class="px-4 py-3 text-center">-</td>
+                <td class="px-4 py-3 text-sm">
+                  <div class="text-gray-600 mb-1 whitespace-nowrap">Terpakai: Rp {{ amount(p.total_kegiatan_biaya) }}</div>
+                  <div :class="p.sisa_anggaran < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'" class="whitespace-nowrap">
+                    Sisa: Rp {{ amount(p.sisa_anggaran) }}
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-center space-y-1">
+                  <button @click="openEdit(p)" class="block w-full text-xs px-2 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors">Ubah</button>
+                  <button @click="confirmDelete(p)" class="block w-full text-xs px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors">Hapus</button>
+                </td>
+              </tr>
+
+              <tr v-for="k in p.kegiatans || []" :key="k.id" class="border-b border-gray-100" style="background:#E8F4FB;">
+                <td class="px-4 py-3 text-xs text-gray-700">{{ k.divisi?.nama || '-' }}</td>
+                <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ rekCode('KGT', k.id) }}</td>
+                <td class="px-4 py-3">
+                  <p class="text-sm font-medium text-gray-800">{{ k.nama }}</p>
+                </td>
+                <td class="px-4 py-3 text-right text-sm text-gray-800 font-medium whitespace-nowrap">Rp {{ amount(k.rencana_biaya) }}</td>
+                <td class="px-4 py-3 text-xs text-gray-700">{{ k.deskripsi || '-' }}</td>
+                <td class="px-4 py-3 text-center text-xs text-gray-800">{{ k.target_output ?? '-' }}</td>
+                <td class="px-4 py-3 text-center text-xs text-gray-800">{{ p.satuan || '-' }}</td>
+                <td class="px-4 py-3 text-center text-xs">
+                  <div v-if="k.pilars && k.pilars.length > 0" class="flex flex-wrap gap-1 justify-center">
+                    <span v-for="pl in k.pilars" :key="pl.id" class="px-1.5 py-0.5 rounded-lg bg-orange-100 text-orange-700 text-[10px] font-medium">{{ pl.nama }}</span>
+                  </div>
+                  <span v-else class="text-gray-400">-</span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <span class="text-xs font-medium px-2 py-1 rounded-lg" :class="statusBadgeClass(k.status)">{{ statusLabel(k.status) }}</span>
+                </td>
+                <td class="px-4 py-3 text-center">-</td>
+              </tr>
+
+              <tr v-if="!p.kegiatans || p.kegiatans.length === 0" class="bg-gray-50 border-b border-gray-100">
+                <td colspan="10" class="px-4 py-4 text-center text-sm text-gray-400">Belum ada kegiatan pada program ini.</td>
+              </tr>
+            </template>
+
+            <tr v-if="programs.length === 0" class="bg-white">
+              <td colspan="10" class="px-4 py-8 text-center text-sm text-gray-400">Belum ada data program.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <Modal :show="showModal" :title="editing ? 'Edit Program' : 'Tambah Program'" @close="closeModal" max-width="xl">
       <form @submit.prevent="save" class="space-y-4">
         <div>
@@ -76,21 +130,20 @@
           <p v-if="form.errors.rencana_biaya" class="err">{{ form.errors.rencana_biaya }}</p>
         </div>
         <div class="flex gap-3 justify-end pt-2">
-          <button type="button" @click="closeModal" class="btn-secondary">Batal</button>
-          <button type="submit" :disabled="form.processing" class="btn-primary">
+          <button type="button" @click="closeModal" class="px-3 py-2 rounded border border-gray-300 bg-white font-bold text-gray-800 hover:bg-gray-100 cursor-pointer">Batal</button>
+          <button type="submit" :disabled="form.processing" class="px-3 py-2 rounded border border-gray-300 bg-white font-bold text-gray-800 hover:bg-gray-100 disabled:opacity-60 cursor-pointer">
             {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
           </button>
         </div>
       </form>
     </Modal>
 
-    <!-- Delete Confirm -->
     <Modal :show="showDeleteModal" title="Hapus Program" @close="showDeleteModal = false">
       <p class="text-gray-600">Apakah Anda yakin ingin menghapus program <strong>{{ deleting?.nama }}</strong>?</p>
       <template #footer>
         <div class="flex gap-3 justify-end">
-          <button @click="showDeleteModal = false" class="btn-secondary">Batal</button>
-          <button @click="deleteProgram" class="btn-danger">Hapus</button>
+          <button @click="showDeleteModal = false" class="px-3 py-2 rounded border border-gray-300 bg-white font-bold text-gray-800 hover:bg-gray-100 cursor-pointer">Batal</button>
+          <button @click="deleteProgram" class="px-3 py-2 rounded border border-gray-300 bg-white font-bold text-gray-800 hover:bg-gray-100 cursor-pointer">Hapus</button>
         </div>
       </template>
     </Modal>
@@ -99,7 +152,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useForm, router } from '@inertiajs/vue3'
+import { useForm, router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Modal from '@/Components/Modal.vue'
 
@@ -112,8 +165,31 @@ const deleting = ref(null)
 
 const form = useForm({ nama: '', deskripsi: '', target_output: '', satuan: '', rencana_biaya: '' })
 
-function fmt(v) {
-  return 'Rp ' + Number(v || 0).toLocaleString('id-ID')
+function amount(v) {
+  return Number(v || 0).toLocaleString('id-ID')
+}
+
+function countByStatus(program, status) {
+  return program.kegiatans?.filter(k => k.status === status).length || 0
+}
+
+function statusBadgeClass(s) {
+  return {
+    draft: 'bg-gray-100 text-gray-700',
+    diajukan: 'bg-orange-100 text-orange-700',
+    revisi: 'bg-yellow-100 text-yellow-700',
+    disetujui: 'bg-green-100 text-green-700',
+    ditolak: 'bg-red-100 text-red-700',
+    selesai: 'bg-blue-100 text-blue-700',
+  }[s] || 'bg-gray-100 text-gray-700'
+}
+
+function statusLabel(s) {
+  return String(s || '-').charAt(0).toUpperCase() + String(s || '-').slice(1)
+}
+
+function rekCode(prefix, id) {
+  return `${prefix}.${String(id).padStart(3, '0')}`
 }
 
 function openCreate() {
@@ -156,4 +232,3 @@ function deleteProgram() {
   })
 }
 </script>
-

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
-            $table->string('queue')->index();
+            $table->string('TWueue')->index();
             $table->longText('payload');
             $table->unsignedTinyInteger('attempts');
             $table->unsignedInteger('reserved_at')->nullable();
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->id();
             $table->string('uuid')->unique();
             $table->text('connection');
-            $table->text('queue');
+            $table->text('TWueue');
             $table->longText('payload');
             $table->longText('exception');
             $table->timestamp('failed_at')->useCurrent();

@@ -12,16 +12,39 @@ class ProgramController extends Controller
 {
     public function index()
     {
-        $programs = Program::with(['user', 'kegiatans'])
-            ->withCount('kegiatans')
-            ->latest()
-            ->get()
-            ->map(function ($p) {
-                return array_merge($p->toArray(), [
-                    'total_kegiatan_biaya' => $p->total_kegiatan_biaya,
-                    'sisa_anggaran'        => $p->rencana_biaya - $p->total_kegiatan_biaya,
-                ]);
+        $user = Auth::user();
+        $query = Program::with(['user', 'kegiatans' => function ($q) use ($user) {
+            $q->with(['divisi', 'pilars']);
+            if ($user->isDivisi()) {
+                $q->where('divisi_id', $user->divisi_id);
+            }
+        }])->withCount(['kegiatans' => function ($q) use ($user) {
+            if ($user->isDivisi()) {
+                $q->where('divisi_id', $user->divisi_id);
+            }
+        }]);
+
+        // Filter: superadmin sees all, divisi sees only programs with kegiatan in their divisi
+        if ($user->isDivisi()) {
+            $query->whereHas('kegiatans', function ($q) use ($user) {
+                $q->where('divisi_id', $user->divisi_id);
             });
+        }
+
+        $programs = $query->latest()->get()->map(function (Program $p) use ($user) {
+            // If user is divisi, calculate only for their divisi kegiatan
+            if ($user->isDivisi()) {
+                $userKegiatans = $p->kegiatans->where('divisi_id', $user->divisi_id);
+                $totalBiaya = $userKegiatans->sum('rencana_biaya');
+            } else {
+                $totalBiaya = $p->total_kegiatan_biaya;
+            }
+
+            return array_merge($p->toArray(), [
+                'total_kegiatan_biaya' => $totalBiaya,
+                'sisa_anggaran'        => $p->rencana_biaya - $totalBiaya,
+            ]);
+        });
 
         return Inertia::render('Program/Index', compact('programs'));
     }
@@ -91,5 +114,25 @@ class ProgramController extends Controller
 
         $program->delete();
         return back()->with('success', 'Program berhasil dihapus.');
+    }
+
+    public function show(Program $program)
+    {
+        $program->load(['user', 'kegiatans.divisi', 'kegiatans.pilars', 'kegiatans.realisasis.periode']);
+
+        // Fetch activity logs for this program
+        $logs = ActivityLog::where('subject_type', Program::class)
+            ->where('subject_id', $program->id)
+            ->with('user')
+            ->latest()
+            ->get();
+
+        return Inertia::render('Program/Show', [
+            'program' => array_merge($program->toArray(), [
+                'total_kegiatan_biaya' => $program->total_kegiatan_biaya,
+                'sisa_anggaran' => $program->rencana_biaya - $program->total_kegiatan_biaya,
+            ]),
+            'logs' => $logs,
+        ]);
     }
 }

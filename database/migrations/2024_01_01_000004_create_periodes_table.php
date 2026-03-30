@@ -8,7 +8,7 @@ return new class extends Migration {
         Schema::create('periodes', function (Blueprint $table) {
             $table->id();
             $table->integer('tahun');
-            $table->enum('triwulan', ['Q1','Q2','Q3','Q4']);
+            $table->enum('triwulan', ['Tw 1','Tw 2','Tw 3','Tw 4']);
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->unique(['tahun','triwulan']);

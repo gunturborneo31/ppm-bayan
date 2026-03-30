@@ -4,9 +4,9 @@
       <button @click="openCreate" class="btn-primary">+ Tambah Divisi</button>
     </template>
 
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b">
+        <thead class="bg-gray-50 border-b border-gray-100">
           <tr>
             <th class="text-left px-4 py-3 font-medium text-gray-600">Nama Divisi</th>
             <th class="text-left px-4 py-3 font-medium text-gray-600">Deskripsi</th>
@@ -27,8 +27,8 @@
             </td>
             <td class="px-4 py-3">
               <div class="flex gap-2 justify-end">
-                <button @click="openEdit(d)" class="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
-                <button @click="confirmDelete(d)" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
+                <button @click="openEdit(d)" class="text-gray-500 hover:text-gray-700 text-xs">Edit</button>
+                <button @click="confirmDelete(d)" class="text-red-500 hover:text-red-700 text-xs">Hapus</button>
               </div>
             </td>
           </tr>
