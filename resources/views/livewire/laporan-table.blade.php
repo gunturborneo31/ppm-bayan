@@ -1,6 +1,6 @@
 <div>
     <div class="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">Tabel Laporan PPM</h3>
+        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">Tabel Laporan Kegiatan PPM</h3>
 
         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-wrap">
 
