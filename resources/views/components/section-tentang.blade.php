@@ -2,6 +2,7 @@
     $totalAnggaranDB = App\Models\Program::sum('rencana_biaya');
     $totalAnggaran = $totalAnggaranDB > 0 ? $totalAnggaranDB : 124800000000;
     $anggaranMiliar = round($totalAnggaran / 1000000000, 1);
+    $anggaranMiliarFormatted = number_format($totalAnggaranDB,2, ',', '.');
 @endphp
 
 <section id="tentang" class="py-20 lg:py-28 bg-gray-50 overflow-hidden relative">
@@ -18,12 +19,6 @@
             <div class="order-2 lg:order-1 lg:col-span-2" 
                  :class="shown ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'" 
                  style="transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);">
-                <div class="mb-4">
-                    <span class="text-[var(--color-primary)] font-bold uppercase tracking-[0.2em] text-xs flex items-center gap-2">
-                        <span class="w-8 h-[1px] bg-[var(--color-primary)]"></span>
-                        TENTANG KAMI
-                    </span>
-                </div>
                 <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6 leading-[1.1] tracking-tight">
                     Tentang <br><span class="text-[var(--color-primary)]">PPM Bayan Group</span>
                 </h1>
@@ -64,13 +59,13 @@
                                 <div class="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center shadow-lg shadow-[var(--color-primary)]/30">
                                     <span class="material-icons text-white text-base">account_balance_wallet</span>
                                 </div>
-                                <span class="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Total Pagu PPM</span>
+                                <span class="text-[6px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Total Pagu PPM</span>
                             </div>
                             
                             <div class="flex items-baseline gap-2 mb-2">
                                 <span class="text-white text-2xl font-bold">Rp</span>
-                                <span class="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none" x-text="count">0</span>
-                                <span class="text-2xl font-bold text-gray-400">Miliar</span>
+                                <span class="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">{{ $anggaranMiliarFormatted }}</span>
+                                {{-- <span class="text-2xl font-bold text-gray-400">Miliar</span> --}}
                             </div>
 
                             <div class="flex items-center justify-between mt-4">

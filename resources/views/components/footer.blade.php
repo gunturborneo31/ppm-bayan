@@ -10,7 +10,7 @@
                 <div class="flex flex-col items-start gap-4 mb-10 group">
                     <img src="{{ asset('logo-bayan.png') }}" 
                          alt="Bayan Group Logo" 
-                         class="h-10 w-auto object-contain transform invert hue-rotate-180 opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                         class="h-10 w-auto object-contain transform  group-hover:opacity-100 transition-opacity drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                     <div class="pl-3 border-l-2 border-[var(--color-primary)]/40 mt-1">
                         <span class="text-xl font-black text-white block leading-none tracking-tight">PPM Portal</span>
                         <span class="text-[9px] font-bold text-[var(--color-primary)] uppercase tracking-[0.2em] mt-2 block">Corporate Social Responsibility</span>

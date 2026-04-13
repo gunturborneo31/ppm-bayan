@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'superadmin' => \App\Http\Middleware\SuperadminMiddleware::class,
+            'pimpinan.resume-only' => \App\Http\Middleware\PimpinanResumeOnlyMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

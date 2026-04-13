@@ -99,8 +99,8 @@
             <td>{{ $filterSummary['tahun'] }}</td>
         </tr>
         <tr>
-            <td class="label">Triwulan</td>
-            <td>{{ $filterSummary['triwulan'] }}</td>
+            <td class="label">Bulan</td>
+            <td>{{ $filterSummary['bulan'] ?? $filterSummary['triwulan'] }}</td>
             <td class="label">Pencarian</td>
             <td>{{ $filterSummary['q'] }}</td>
         </tr>
@@ -262,6 +262,8 @@
                 <th>Kode</th>
                 <th>Program</th>
                 <th>Kegiatan</th>
+                <th>Lokasi</th>
+                <th>Waktu</th>
                 <th>Divisi</th>
                 <th>Pilar</th>
                 <th>User</th>
@@ -279,6 +281,8 @@
                     <td>{{ $row['kode_ref'] }}</td>
                     <td>{{ $row['program'] }}</td>
                     <td>{{ $row['kegiatan'] }}</td>
+                    <td>{{ $row['lokasi_kegiatan'] ?? '-' }}</td>
+                    <td>{{ $row['waktu_pelaksanaan'] ?? '-' }}</td>
                     <td>{{ $row['divisi'] }}</td>
                     <td>{{ $row['pilar'] ?: '-' }}</td>
                     <td>{{ $row['user_penginput'] }}</td>
@@ -291,7 +295,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="12" class="muted">Belum ada data kegiatan.</td>
+                    <td colspan="14" class="muted">Belum ada data kegiatan.</td>
                 </tr>
             @endforelse
         </tbody>

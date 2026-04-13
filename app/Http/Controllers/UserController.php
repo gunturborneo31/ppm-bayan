@@ -23,7 +23,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', Rule::in(['superadmin', 'divisi'])],
+            'role' => ['required', Rule::in(['superadmin', 'divisi', 'pimpinan'])],
             'divisi_id' => ['nullable', 'exists:divisis,id', 'required_if:role,divisi'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -42,7 +42,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['required', Rule::in(['superadmin', 'divisi'])],
+            'role' => ['required', Rule::in(['superadmin', 'divisi', 'pimpinan'])],
             'divisi_id' => ['nullable', 'exists:divisis,id', 'required_if:role,divisi'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);

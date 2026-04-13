@@ -19,7 +19,7 @@
                     <th class="px-4 py-3 text-left font-medium">No</th>
                     <th class="px-4 py-3 text-left font-medium">Nama Perusahaan</th>
                     <th class="px-4 py-3 text-center font-medium">Jumlah Kegiatan / Program</th>
-                    <th class="px-4 py-3 text-right font-medium">Total Nominal (Rp)</th>
+                    <th class="px-4 py-3 text-right font-medium whitespace-nowrap">Total Nominal (Rp)</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
@@ -30,7 +30,7 @@
                         <td class="px-4 py-3 text-center">
                             <span class="bg-white/10 border border-white/10 px-2 py-1 rounded text-xs font-medium">{{ $perusahaan->laporan_csrs_count ?? 0 }} program</span>
                         </td>
-                        <td class="px-4 py-3 text-right font-bold text-accent">
+                        <td class="px-4 py-3 text-right font-bold text-accent whitespace-nowrap">
                             {{ number_format($perusahaan->laporan_csrs_sum_nominal ?? 0, 0, ',', '.') }}
                         </td>
                     </tr>

@@ -30,10 +30,11 @@
               <th class="px-4 py-2 text-left">Kode Ref</th>
               <th class="px-4 py-2 text-left">Nama Program / Kegiatan</th>
               <th class="px-4 py-2 text-right">Rencana Biaya</th>
+              <th class="px-4 py-2 text-left">Pilar</th>
               <th class="px-4 py-2 text-left">Deskripsi</th>
               <th class="px-4 py-2 text-center">Target Output</th>
               <th class="px-4 py-2 text-center">Satuan</th>
-              <th class="px-4 py-2 text-center">Pilar Terkait</th>
+              <th v-if="isSuperadmin" class="px-4 py-2 text-left">User</th>
               <th class="px-4 py-2 text-left">Status / Anggaran</th>
               <th class="px-4 py-2 text-center">Aksi</th>
             </tr>
@@ -50,10 +51,11 @@
                   <p class="text-xs text-gray-500 mt-0.5">{{ p.kegiatans?.length || 0 }} kegiatan · {{ countByStatus(p, 'disetujui') }} disetujui</p>
                 </td>
                 <td class="px-4 py-3 text-right font-medium text-gray-800 whitespace-nowrap">Rp {{ amount(p.rencana_biaya) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ p.pilar?.nama || '-' }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">{{ p.deskripsi || '-' }}</td>
                 <td class="px-4 py-3 text-center text-gray-600">{{ p.target_output ?? '-' }}</td>
                 <td class="px-4 py-3 text-center text-gray-600">{{ p.satuan || '-' }}</td>
-                <td class="px-4 py-3 text-center">-</td>
+                <td v-if="isSuperadmin" class="px-4 py-3 text-sm text-gray-700">{{ p.user?.name || '-' }}</td>
                 <td class="px-4 py-3 text-sm">
                   <div class="text-gray-600 mb-1 whitespace-nowrap">Terpakai: Rp {{ amount(p.total_kegiatan_biaya) }}</div>
                   <div :class="p.sisa_anggaran < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'" class="whitespace-nowrap">
@@ -73,15 +75,11 @@
                   <p class="text-sm font-medium text-gray-800">{{ k.nama }}</p>
                 </td>
                 <td class="px-4 py-3 text-right text-sm text-gray-800 font-medium whitespace-nowrap">Rp {{ amount(k.rencana_biaya) }}</td>
+                <td class="px-4 py-3 text-xs text-gray-700">{{ k.program?.pilar?.nama || p.pilar?.nama || '-' }}</td>
                 <td class="px-4 py-3 text-xs text-gray-700">{{ k.deskripsi || '-' }}</td>
                 <td class="px-4 py-3 text-center text-xs text-gray-800">{{ k.target_output ?? '-' }}</td>
-                <td class="px-4 py-3 text-center text-xs text-gray-800">{{ p.satuan || '-' }}</td>
-                <td class="px-4 py-3 text-center text-xs">
-                  <div v-if="k.pilars && k.pilars.length > 0" class="flex flex-wrap gap-1 justify-center">
-                    <span v-for="pl in k.pilars" :key="pl.id" class="px-1.5 py-0.5 rounded-lg bg-orange-100 text-orange-700 text-[10px] font-medium">{{ pl.nama }}</span>
-                  </div>
-                  <span v-else class="text-gray-400">-</span>
-                </td>
+                <td class="px-4 py-3 text-center text-xs text-gray-800">{{ k.satuan || '-' }}</td>
+                <td v-if="isSuperadmin" class="px-4 py-3 text-xs text-gray-700">{{ k.creator_name || '-' }}</td>
                 <td class="px-4 py-3 text-center">
                   <span class="text-xs font-medium px-2 py-1 rounded-lg" :class="statusBadgeClass(k.status)">{{ statusLabel(k.status) }}</span>
                 </td>
@@ -89,12 +87,12 @@
               </tr>
 
               <tr v-if="!p.kegiatans || p.kegiatans.length === 0" class="bg-gray-50 border-b border-gray-100">
-                <td colspan="10" class="px-4 py-4 text-center text-sm text-gray-400">Belum ada kegiatan pada program ini.</td>
+                <td :colspan="isSuperadmin ? 11 : 10" class="px-4 py-4 text-center text-sm text-gray-400">Belum ada kegiatan pada program ini.</td>
               </tr>
             </template>
 
             <tr v-if="programs.length === 0" class="bg-white">
-              <td colspan="10" class="px-4 py-8 text-center text-sm text-gray-400">Belum ada data program.</td>
+              <td :colspan="isSuperadmin ? 11 : 10" class="px-4 py-8 text-center text-sm text-gray-400">Belum ada data program.</td>
             </tr>
           </tbody>
         </table>
@@ -103,6 +101,17 @@
 
     <Modal :show="showModal" :title="editing ? 'Edit Program' : 'Tambah Program'" @close="closeModal" max-width="xl">
       <form @submit.prevent="save" class="space-y-4">
+        <div>
+          <label class="label">Pilar</label>
+          <select v-model="form.pilar_id" class="input" :class="{'input-error': form.errors.pilar_id}">
+            <option value="">-- Pilih Pilar --</option>
+            <option v-for="pl in pilars" :key="pl.id" :value="pl.id">{{ pl.nama }}</option>
+          </select>
+          <p v-if="form.errors.pilar_id" class="err">{{ form.errors.pilar_id }}</p>
+          <p v-if="selectedPilar" class="mt-1 text-xs text-gray-500">
+            Anggaran pilar: Rp {{ amount(selectedPilar.rencana_biaya) }}
+          </p>
+        </div>
         <div>
           <label class="label">Nama Program</label>
           <input v-model="form.nama" class="input" :class="{'input-error': form.errors.nama}" type="text" />
@@ -115,7 +124,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="label">Target Output</label>
-            <input v-model="form.target_output" class="input" :class="{'input-error': form.errors.target_output}" type="number" step="0.01" />
+            <input :value="form.target_output" @input="onNumberInput('target_output', $event.target.value)" class="input text-right" :class="{'input-error': form.errors.target_output}" type="text" inputmode="numeric" />
             <p v-if="form.errors.target_output" class="err">{{ form.errors.target_output }}</p>
           </div>
           <div>
@@ -126,7 +135,7 @@
         </div>
         <div>
           <label class="label">Rencana Biaya (Rp)</label>
-          <input v-model="form.rencana_biaya" class="input" :class="{'input-error': form.errors.rencana_biaya}" type="number" step="0.01" />
+          <input :value="form.rencana_biaya" @input="onNumberInput('rencana_biaya', $event.target.value)" class="input text-right" :class="{'input-error': form.errors.rencana_biaya}" type="text" inputmode="numeric" />
           <p v-if="form.errors.rencana_biaya" class="err">{{ form.errors.rencana_biaya }}</p>
         </div>
         <div class="flex gap-3 justify-end pt-2">
@@ -151,22 +160,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useForm, router, Link } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { useForm, router, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Modal from '@/Components/Modal.vue'
 
-const props = defineProps({ programs: Array })
+const props = defineProps({ programs: Array, pilars: Array })
 
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const editing = ref(null)
 const deleting = ref(null)
+const page = usePage()
 
-const form = useForm({ nama: '', deskripsi: '', target_output: '', satuan: '', rencana_biaya: '' })
+const isSuperadmin = computed(() => page.props.auth.user?.is_superadmin || page.props.auth.user?.is_cdo)
+
+const form = useForm({ pilar_id: '', nama: '', deskripsi: '', target_output: '', satuan: '', rencana_biaya: '' })
+
+const selectedPilar = computed(() => props.pilars?.find(pl => Number(pl.id) === Number(form.pilar_id)))
 
 function amount(v) {
   return Number(v || 0).toLocaleString('id-ID')
+}
+
+function normalize(v) {
+  if (v === null || v === undefined || v === '') return ''
+  return String(v).replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.]/g, '')
+}
+
+function onNumberInput(field, value) {
+  const clean = String(value || '').replace(/\D/g, '')
+  form[field] = clean ? Number(clean).toLocaleString('id-ID') : ''
 }
 
 function countByStatus(program, status) {
@@ -177,6 +201,7 @@ function statusBadgeClass(s) {
   return {
     draft: 'bg-gray-100 text-gray-700',
     diajukan: 'bg-orange-100 text-orange-700',
+    diajukan_ulang: 'bg-orange-100 text-orange-700',
     revisi: 'bg-yellow-100 text-yellow-700',
     disetujui: 'bg-green-100 text-green-700',
     ditolak: 'bg-red-100 text-red-700',
@@ -195,16 +220,18 @@ function rekCode(prefix, id) {
 function openCreate() {
   editing.value = null
   form.reset()
+  form.pilar_id = ''
   showModal.value = true
 }
 
 function openEdit(p) {
   editing.value = p
+  form.pilar_id = p.pilar_id || p.pilar?.id || ''
   form.nama = p.nama
   form.deskripsi = p.deskripsi || ''
-  form.target_output = p.target_output
+  form.target_output = amount(p.target_output)
   form.satuan = p.satuan
-  form.rencana_biaya = p.rencana_biaya
+  form.rencana_biaya = amount(p.rencana_biaya)
   showModal.value = true
 }
 
@@ -214,6 +241,12 @@ function closeModal() {
 }
 
 function save() {
+  form.transform((data) => ({
+    ...data,
+    target_output: normalize(data.target_output),
+    rencana_biaya: normalize(data.rencana_biaya),
+  }))
+
   if (editing.value) {
     form.put(route('program.update', editing.value.id), { onSuccess: closeModal })
   } else {

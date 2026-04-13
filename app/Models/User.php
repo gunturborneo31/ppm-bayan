@@ -25,5 +25,6 @@ class User extends Authenticatable {
     public function activityLogs() { return $this->hasMany(ActivityLog::class); }
     public function isSuperadmin(): bool { return $this->role === 'superadmin'; }
     public function isDivisi(): bool { return $this->role === 'divisi'; }
+    public function isPimpinan(): bool { return $this->role === 'pimpinan'; }
     public function isCdo(): bool { return $this->role === 'cdo' || $this->isSuperadmin(); }
 }

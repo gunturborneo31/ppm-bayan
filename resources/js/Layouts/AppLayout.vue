@@ -39,6 +39,7 @@
 
       <nav class="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
         <Link
+          v-if="!isPimpinan"
           :href="route('dashboard')"
           class="nav-link"
           :class="[{ 'nav-link-active': isActive('dashboard') }, sidebarCollapsed ? 'justify-center' : '']"
@@ -66,6 +67,7 @@
         </Link>
 
         <Link
+          v-if="!isPimpinan"
           :href="route('perencanaan.index')"
           class="nav-link"
           :class="[{ 'nav-link-active': isActive('perencanaan') }, sidebarCollapsed ? 'justify-center' : '']"
@@ -88,6 +90,7 @@
         </Link>
 
         <Link
+          v-if="!isPimpinan"
           :href="route('realisasi.index')"
           class="nav-link"
           :class="[{ 'nav-link-active': isActive('realisasi') }, sidebarCollapsed ? 'justify-center' : '']"
@@ -133,7 +136,7 @@
           <div v-show="resumeMenuOpen" class="space-y-1 pl-6">
             <Link :href="route('resume.pilar.index')" class="nav-link" :class="{ 'nav-link-active': isActivePath('/resume/pilar') }">Resume Pilar</Link>
             <Link :href="route('resume.program.index')" class="nav-link" :class="{ 'nav-link-active': isActivePath('/resume/program') }">Resume Program</Link>
-            <Link :href="route('resume.divisi.index')" class="nav-link" :class="{ 'nav-link-active': isActivePath('/resume/divisi') }">Resume Divisi</Link>
+            <!-- <Link :href="route('resume.divisi.index')" class="nav-link" :class="{ 'nav-link-active': isActivePath('/resume/divisi') }">Resume Divisi</Link> -->
             <Link :href="route('resume.user.index')" class="nav-link" :class="{ 'nav-link-active': isActivePath('/resume/user') }">Resume User</Link>
           </div>
         </div>
@@ -181,6 +184,20 @@
           </Link>
 
           <Link
+            :href="route('lokasi.index')"
+            class="nav-link"
+            :class="[{ 'nav-link-active': isActive('lokasi') }, sidebarCollapsed ? 'justify-center' : '']"
+            :title="sidebarCollapsed ? 'Lokasi' : ''"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span v-if="!sidebarCollapsed">Lokasi</span>
+          </Link>
+
+          <Link
             :href="route('user.index')"
             class="nav-link"
             :class="[{ 'nav-link-active': isActive('user') }, sidebarCollapsed ? 'justify-center' : '']"
@@ -192,11 +209,50 @@
             </svg>
             <span v-if="!sidebarCollapsed">User</span>
           </Link>
+
+          <Link
+            :href="route('pengumuman.index')"
+            class="nav-link"
+            :class="[{ 'nav-link-active': isActive('pengumuman') }, sidebarCollapsed ? 'justify-center' : '']"
+            :title="sidebarCollapsed ? 'Pengumuman' : ''"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span v-if="!sidebarCollapsed">Pengumuman</span>
+          </Link>
+
+          <Link
+            :href="route('regulasi.index')"
+            class="nav-link"
+            :class="[{ 'nav-link-active': isActive('regulasi') }, sidebarCollapsed ? 'justify-center' : '']"
+            :title="sidebarCollapsed ? 'Dasar Hukum Pelaksanaan' : ''"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 4.462 5 2 6.343 2 8v11c0-1.657 2.462-3 5.5-3 1.746 0 3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c3.038 0 5.5 1.343 5.5 3v11c0-1.657-2.462-3-5.5-3-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            <span v-if="!sidebarCollapsed">Dasar Hukum</span>
+          </Link>
         </template>
 
-        <div v-if="!sidebarCollapsed" class="pt-4 pb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Sistem</div>
+        <div v-if="!sidebarCollapsed && !isPimpinan" class="pt-4 pb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Sistem</div>
 
         <Link
+          v-if="isSuperadmin"
+          :href="route('settings.index')"
+          class="nav-link"
+          :class="[{ 'nav-link-active': isActive('settings') }, sidebarCollapsed ? 'justify-center' : '']"
+          :title="sidebarCollapsed ? 'Pengaturan' : ''"
+        >
+          <svg class="w-4 h-4 flex-shrink-0" :class="sidebarCollapsed ? '' : 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span v-if="!sidebarCollapsed">Pengaturan</span>
+        </Link>
+
+        <Link
+          v-if="!isPimpinan"
           :href="route('activity-log.index')"
           class="nav-link"
           :class="[{ 'nav-link-active': isActive('activity-log') }, sidebarCollapsed ? 'justify-center' : '']"
@@ -234,6 +290,52 @@
       <header class="bg-white/90 border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 backdrop-blur-sm">
         <h2 class="text-base font-semibold text-gray-800">{{ title }}</h2>
         <div class="flex items-center gap-3">
+          <div class="relative" v-if="notifications.length">
+            <button
+              type="button"
+              class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50"
+              @click="notificationsOpen = !notificationsOpen"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span
+                v-if="unreadNotificationCount > 0"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+              >
+                {{ unreadNotificationCount }}
+              </span>
+            </button>
+
+            <div
+              v-if="notificationsOpen"
+              class="absolute right-0 top-12 z-30 w-[360px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
+            >
+              <div class="border-b border-gray-100 px-4 py-3">
+                <p class="text-sm font-semibold text-gray-800">Notifikasi</p>
+                <p class="text-xs text-gray-500">Komentar kegiatan terbaru</p>
+              </div>
+              <div class="max-h-[420px] overflow-auto">
+                <a
+                  v-for="item in notifications"
+                  :key="item.id"
+                  :href="item.route || '#'"
+                  class="block border-b border-gray-100 px-4 py-3 transition hover:bg-slate-50"
+                  :class="!item.read_at ? 'bg-orange-50/60' : 'bg-white'"
+                  @click="notificationsOpen = false"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-gray-800">{{ item.title }}</p>
+                      <p class="mt-1 text-xs leading-5 text-gray-600">{{ item.message }}</p>
+                    </div>
+                    <span v-if="!item.read_at" class="mt-1 h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+                  </div>
+                  <p class="mt-2 text-[11px] text-gray-400">{{ formatNotificationDate(item.created_at) }}</p>
+                </a>
+              </div>
+            </div>
+          </div>
           <slot name="header-actions" />
         </div>
       </header>
@@ -257,11 +359,15 @@ defineProps({ title: { type: String, default: '' } })
 const page = usePage()
 const auth = computed(() => page.props.auth)
 const isSuperadmin = computed(() => auth.value.user?.is_superadmin)
+const isPimpinan = computed(() => auth.value.user?.is_pimpinan || auth.value.user?.role === 'pimpinan')
 const pendingVerificationCount = computed(() => Number(page.props.pending_verification_count || 0))
+const notifications = computed(() => page.props.notifications || [])
+const unreadNotificationCount = computed(() => Number(page.props.unread_notification_count || 0))
 const isResumeActive = computed(() => window.location.pathname.startsWith('/resume'))
 
 const sidebarCollapsed = ref(localStorage.getItem('sidebar-collapsed') === '1')
 const resumeMenuOpen = ref(window.location.pathname.startsWith('/resume'))
+const notificationsOpen = ref(false)
 
 function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
@@ -278,5 +384,16 @@ function isActivePath(path) {
 
 function logout() {
   router.post(route('logout'))
+}
+
+function formatNotificationDate(value) {
+  if (!value) return '-'
+  return new Date(value).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 </script>

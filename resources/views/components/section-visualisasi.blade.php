@@ -1,3 +1,26 @@
+@php
+    $pilarColorMap = \App\Models\Pilar::colorMap();
+
+    $chartRows = \Illuminate\Support\Facades\DB::table('pilars')
+        ->leftJoin('programs', 'programs.pilar_id', '=', 'pilars.id')
+        ->leftJoin('kegiatans', 'kegiatans.program_id', '=', 'programs.id')
+        ->leftJoin('realisasis', 'realisasis.kegiatan_id', '=', 'kegiatans.id')
+        ->select(
+            'pilars.id',
+            'pilars.nama',
+            'pilars.rencana_biaya',
+            \Illuminate\Support\Facades\DB::raw('COALESCE(SUM(realisasis.realisasi_biaya), 0) as total_realisasi')
+        )
+        ->groupBy('pilars.id', 'pilars.nama', 'pilars.rencana_biaya')
+        ->orderBy('pilars.nama')
+        ->get();
+
+    $pilarLabels = $chartRows->pluck('nama')->values();
+    $pilarBudgets = $chartRows->pluck('rencana_biaya')->map(fn($v) => (float) $v)->values();
+    $pilarRealisasi = $chartRows->pluck('total_realisasi')->map(fn($v) => (float) $v)->values();
+    $pilarColors = $chartRows->map(fn($row) => $pilarColorMap[$row->nama] ?? '#64748b')->values();
+@endphp
+
 <section id="visualisasi" class="py-16 md:py-24 bg-white relative overflow-hidden max-w-7xl mx-auto">
     <div class="px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="text-center mb-16" x-data="{ shown: false }" x-intersect.half="shown = true">
@@ -45,32 +68,14 @@
         let barChartInstance = null;
 
         function initCharts() {
-            // Data Dummy PPM Bayan Group
-            const dummyData = {
-                labels: [
-                    'Pendidikan', 
-                    'Kesehatan', 
-                    'Infrastruktur', 
-                    'Kemandirian Ekonomi', 
-                    'Sosial Budaya', 
-                    'Lingkungan', 
-                    'Kelembagaan', 
-                    'Pendapatan Riil'
-                ],
-                data: [4500000000, 3800000000, 5200000000, 2900000000, 2100000000, 1500000000, 1200000000, 3100000000]
+            const pilarData = {
+                labels: @json($pilarLabels),
+                anggaran: @json($pilarBudgets),
+                realisasi: @json($pilarRealisasi),
+                colors: @json($pilarColors),
             };
-            
-            // Palette warna: Hijau (Utama), Merah (Urgent/Penting), Biru (Fasilitas), Sisanya variasi
-            const colors = [
-                '#22c55e', // Green (Pendidikan)
-                '#ef4444', // Red (Kesehatan)
-                '#3b82f6', // Blue (Infrastruktur)
-                '#f59e0b', // Amber/Orange
-                '#8b5cf6', // Violet
-                '#06b6d4', // Cyan
-                '#ec4899', // Pink
-                '#10b981'  // Emerald
-            ];
+
+            const colors = pilarData.colors;
 
             const ctxPie = document.getElementById('chartPie')?.getContext('2d');
             const ctxBar = document.getElementById('chartBar')?.getContext('2d');
@@ -80,9 +85,9 @@
                 pieChartInstance = new Chart(ctxPie, {
                     type: 'doughnut',
                     data: {
-                        labels: dummyData.labels,
+                        labels: pilarData.labels,
                         datasets: [{
-                            data: dummyData.data,
+                            data: pilarData.anggaran,
                             backgroundColor: colors,
                             borderWidth: 0,
                             hoverOffset: 15
@@ -95,11 +100,18 @@
                             legend: {
                                 position: 'bottom',
                                 labels: { 
-                                    padding: 20, 
+                                        padding: 20,
                                     usePointStyle: true,
-                                    font: { family: "'Plus Jakarta Sans', sans-serif", weight: 'semibold', size: 11 } 
+                                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: 'semibold', size: 11 }
                                 }
                             },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return context.label + ': Rp ' + Number(context.raw || 0).toLocaleString('id-ID');
+                                            }
+                                        }
+                                    }
                         },
                         cutout: '70%',
                         animation: { animateRotate: true, animateScale: true }
@@ -112,10 +124,10 @@
                 barChartInstance = new Chart(ctxBar, {
                     type: 'bar',
                     data: {
-                        labels: dummyData.labels,
+                        labels: pilarData.labels,
                         datasets: [{
                             label: 'Realisasi Anggaran (Rp)',
-                            data: dummyData.data,
+                            data: pilarData.realisasi,
                             backgroundColor: colors,
                             borderRadius: 12,
                             maxBarThickness: 35
@@ -130,7 +142,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        return ' Rp ' + context.raw.toLocaleString('id-ID');
+                                        return ' Rp ' + Number(context.raw || 0).toLocaleString('id-ID');
                                     }
                                 }
                             }

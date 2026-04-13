@@ -16,22 +16,39 @@ class ReportController extends Controller
         $pilar   = $request->get('pilar_id');
         $tahun   = $request->get('tahun');
 
-        $query = Kegiatan::with(['program', 'divisi', 'pilars', 'realisasis.periode'])
+        $query = Kegiatan::with(['program.pilar', 'divisi', 'lokasis', 'realisasis.periode'])
             ->when($divisi, fn($q) => $q->where('divisi_id', $divisi))
-            ->when($pilar, fn($q) => $q->whereHas('pilars', fn($q2) => $q2->where('pilars.id', $pilar)))
+            ->when($pilar, fn($q) => $q->whereHas('program', fn($q2) => $q2->where('pilar_id', $pilar)))
             ->when($tahun, fn($q) => $q->whereHas('realisasis.periode', fn($q2) => $q2->where('tahun', $tahun)));
 
-        $kegiatans = $query->get()->map(fn($k) => [
-            'nama'             => $k->nama,
-            'program'          => $k->program?->nama,
-            'divisi'           => $k->divisi?->nama,
-            'status'           => $k->status->label(),
-            'target_output'    => $k->target_output,
-            'rencana_biaya'    => $k->rencana_biaya,
-            'realisasi_output' => $k->realisasis->sum('realisasi_output'),
-            'realisasi_biaya'  => $k->realisasis->sum('realisasi_biaya'),
-            'progress'         => $k->progress,
-        ]);
+        $kegiatans = $query->get()->flatMap(function ($k) use ($tahun) {
+            $realisasis = $k->realisasis
+                ->filter(fn($r) => !$tahun || (string) $r->periode?->tahun === (string) $tahun);
+
+            return $k->lokasis->map(function ($lokasi, $index) use ($k, $realisasis) {
+                $perLokasi = $realisasis->where('kegiatan_lokasi_id', $lokasi->id);
+                if ($perLokasi->isEmpty() && $index === 0) {
+                    $perLokasi = $realisasis->whereNull('kegiatan_lokasi_id');
+                }
+
+                $targetOutput = (float) ($lokasi->target_output ?? 0);
+                $realisasiOutput = (float) $perLokasi->sum('realisasi_output');
+                $progress = $targetOutput > 0 ? round(($realisasiOutput / $targetOutput) * 100, 2) : 0;
+
+                return [
+                    'nama'             => $k->nama,
+                    'lokasi'           => $lokasi->lokasi,
+                    'program'          => $k->program?->nama,
+                    'divisi'           => $k->divisi?->nama,
+                    'status'           => $k->status->label(),
+                    'target_output'    => $targetOutput,
+                    'rencana_biaya'    => (float) ($lokasi->rencana_biaya ?? 0),
+                    'realisasi_output' => $realisasiOutput,
+                    'realisasi_biaya'  => (float) $perLokasi->sum('realisasi_biaya'),
+                    'progress'         => min(100, max(0, $progress)),
+                ];
+            });
+        })->values();
 
         if ($format === 'excel') {
             return $this->exportExcel($kegiatans);
@@ -46,7 +63,7 @@ class ReportController extends Controller
 
         $callback = function () use ($data) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Nama Kegiatan', 'Program', 'Divisi', 'Status', 'Target Output', 'Rencana Biaya', 'Realisasi Output', 'Realisasi Biaya', 'Progress (%)']);
+            fputcsv($handle, ['Nama Kegiatan', 'Lokasi', 'Program', 'Divisi', 'Status', 'Target Output', 'Rencana Biaya', 'Realisasi Output', 'Realisasi Biaya', 'Progress (%)']);
             foreach ($data as $row) {
                 fputcsv($handle, array_values($row));
             }

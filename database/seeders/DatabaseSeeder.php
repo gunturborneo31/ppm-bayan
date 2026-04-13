@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(SettingsSeeder::class);
+
         // Superadmin
         $admin = User::updateOrCreate(
             ['email' => 'admin@ppm.com'],
@@ -64,16 +66,16 @@ class DatabaseSeeder extends Seeder
         );
 
         // Pilars
-        $pilar1 = Pilar::updateOrCreate(['nama' => 'Pemberdayaan Ekonomi'], ['deskripsi' => 'Program pemberdayaan ekonomi masyarakat']);
-        $pilar2 = Pilar::updateOrCreate(['nama' => 'Pendidikan'], ['deskripsi' => 'Program di bidang pendidikan']);
-        $pilar3 = Pilar::updateOrCreate(['nama' => 'Kesehatan'], ['deskripsi' => 'Program di bidang kesehatan']);
-        $pilar4 = Pilar::updateOrCreate(['nama' => 'Lingkungan'], ['deskripsi' => 'Program pelestarian lingkungan']);
+        $pilar1 = Pilar::updateOrCreate(['nama' => 'Pemberdayaan Ekonomi'], ['deskripsi' => 'Program pemberdayaan ekonomi masyarakat', 'rencana_biaya' => 800000000]);
+        $pilar2 = Pilar::updateOrCreate(['nama' => 'Pendidikan'], ['deskripsi' => 'Program di bidang pendidikan', 'rencana_biaya' => 800000000]);
+        $pilar3 = Pilar::updateOrCreate(['nama' => 'Kesehatan'], ['deskripsi' => 'Program di bidang kesehatan', 'rencana_biaya' => 600000000]);
+        $pilar4 = Pilar::updateOrCreate(['nama' => 'Lingkungan'], ['deskripsi' => 'Program pelestarian lingkungan', 'rencana_biaya' => 700000000]);
 
         // Periodes
-        $periode1 = Periode::updateOrCreate(['tahun' => 2025, 'triwulan' => 'Tw 1'], ['status' => true]);
-        $periode2 = Periode::updateOrCreate(['tahun' => 2025, 'triwulan' => 'Tw 2'], ['status' => true]);
-        $periode3 = Periode::updateOrCreate(['tahun' => 2025, 'triwulan' => 'Tw 3'], ['status' => true]);
-        $periode4 = Periode::updateOrCreate(['tahun' => 2025, 'triwulan' => 'Tw 4'], ['status' => true]);
+        $periode1 = Periode::updateOrCreate(['tahun' => 2025, 'bulan' => 1], ['triwulan' => 'Jan', 'status' => true]);
+        $periode2 = Periode::updateOrCreate(['tahun' => 2025, 'bulan' => 2], ['triwulan' => 'Feb', 'status' => true]);
+        $periode3 = Periode::updateOrCreate(['tahun' => 2025, 'bulan' => 3], ['triwulan' => 'Mar', 'status' => true]);
+        $periode4 = Periode::updateOrCreate(['tahun' => 2025, 'bulan' => 4], ['triwulan' => 'Apr', 'status' => true]);
 
         // Programs
         $program1 = Program::updateOrCreate(
@@ -84,6 +86,7 @@ class DatabaseSeeder extends Seeder
                 'satuan'        => 'Orang',
                 'rencana_biaya' => 500000000,
                 'user_id'       => $admin->id,
+                'pilar_id'      => $pilar2->id,
             ]
         );
         $program2 = Program::updateOrCreate(
@@ -94,6 +97,7 @@ class DatabaseSeeder extends Seeder
                 'satuan'        => 'Kegiatan',
                 'rencana_biaya' => 300000000,
                 'user_id'       => $admin->id,
+                'pilar_id'      => $pilar4->id,
             ]
         );
 
@@ -112,7 +116,7 @@ class DatabaseSeeder extends Seeder
                 'version' => 1,
             ]
         );
-        $keg1->pilars()->syncWithoutDetaching([$pilar1->id, $pilar2->id]);
+        $keg1->pilars()->sync([$program1->pilar_id]);
 
         $keg2 = Kegiatan::updateOrCreate(
             [
@@ -128,7 +132,7 @@ class DatabaseSeeder extends Seeder
                 'version' => 1,
             ]
         );
-        $keg2->pilars()->syncWithoutDetaching([$pilar2->id]);
+        $keg2->pilars()->sync([$program1->pilar_id]);
 
         $keg3 = Kegiatan::updateOrCreate(
             [
@@ -144,7 +148,7 @@ class DatabaseSeeder extends Seeder
                 'version' => 1,
             ]
         );
-        $keg3->pilars()->syncWithoutDetaching([$pilar4->id]);
+        $keg3->pilars()->sync([$program2->pilar_id]);
 
         // Realisasi for keg1
         \App\Models\Realisasi::updateOrCreate(
@@ -171,11 +175,14 @@ class DatabaseSeeder extends Seeder
         );
     
     
-        User::factory()->create([
-            'name'     => 'Admin Bayan',
-            'email'    => 'admin@bayangroup.com',
-            'password' => bcrypt('password'),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@bayangroup.com'],
+            [
+                'name'     => 'Admin Bayan',
+                'password' => Hash::make('password'),
+                'role'     => 'superadmin',
+            ]
+        );
 
         // ===== KATEGORI BERITA =====
         $katCSR     = KategoriBerita::create(['nama' => 'Berita CSR',              'slug' => 'berita-csr']);

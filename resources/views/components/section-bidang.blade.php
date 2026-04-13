@@ -1,15 +1,7 @@
-<section id="bidang" class="py-16 md:py-24 bg-gray-50 relative border-t border-gray-100" :class="modalOpen ? 'z-[100]' : ''" x-data="{ modalOpen: false, modalData: null }">
+<section id="pilar" class="py-16 md:py-24 bg-gray-50 relative border-t border-gray-100" :class="modalOpen ? 'z-[100]' : ''" x-data="{ modalOpen: false, modalData: null, isMaterialIcon(icon) { return /^[a-z0-9_]+$/.test(String(icon || '').trim()); } }">
     @php
-        $iconMap = [
-            'pendidikan' => 'school',
-            'kesehatan' => 'medical_services',
-            'pendapatan riil atau pekerjaan' => 'trending_up',
-            'kemandirian ekonomi' => 'payments',
-            'sosial dan budaya' => 'groups',
-            'lingkungan' => 'eco',
-            'kelembagaan komunitas masyarakat' => 'hub',
-            'infrastruktur' => 'construction',
-        ];
+        $pilarColorMap = App\Models\Pilar::colorMap();
+        $pilarIconMap = App\Models\Pilar::iconMap();
 
         $pilars = App\Models\Pilar::query()
             ->with([
@@ -40,7 +32,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="text-center mb-16 relative" x-data="{ shown: false }" x-intersect.half="shown = true">
             <span class="text-[var(--color-primary)] font-bold uppercase tracking-[0.3em] text-[10px] mb-4 block">{{ $pilars->count() }} Pilar PPM Tambang</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">Bidang Program <span class="text-[var(--color-primary)]">PPM</span></h2>
+            <h2 class="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">Pilar Program <span class="text-[var(--color-primary)]">PPM</span></h2>
             <p class="text-gray-500 max-w-2xl mx-auto text-base md:text-lg">Komitmen kami dalam pilar Pengembangan dan Pemberdayaan Masyarakat (PPM) berbasis data untuk keberlanjutan lokal.</p>
         </div>
 
@@ -77,11 +69,14 @@
                     ->map(fn ($group) => (float) ($group->first()->program->rencana_biaya ?? 0))
                     ->sum();
 
-                $iconKey = strtolower(trim((string) $pilar->nama));
+                $pilarColor = $pilarColorMap[$pilar->nama] ?? '#f97316';
+                $pilarIcon = $pilarIconMap[$pilar->nama] ?? 'category';
+                $pilarIconIsMaterial = preg_match('/^[a-z0-9_]+$/', (string) $pilarIcon) === 1;
                 $itemData = [
                     'nama' => $pilar->nama,
                     'deskripsi' => $pilar->deskripsi ?? 'Detail belum tersedia',
-                    'icon' => $iconMap[$iconKey] ?? 'category',
+                    'icon' => $pilarIcon,
+                    'color' => $pilarColor,
                     'totalProgram' => $programGroups->count(),
                     'totalKegiatan' => $kegiatans->count(),
                     'totalPagu' => 'Rp ' . number_format($totalPaguProgram, 0, ',', '.'),
@@ -96,16 +91,20 @@
                  style="transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: {{ $index * 50 }}ms;">
 
                 <!-- Subtle Icon Background -->
-                <div class="absolute -top-10 -right-10 w-40 h-40 bg-[var(--color-primary)]/5 rounded-full blur-3xl group-hover:bg-[var(--color-primary)]/10 transition-colors"></div>
+                <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl transition-colors" style="background-color: {{ $pilarColor }}12;"></div>
 
                 <div class="relative z-10 flex flex-col h-full">
-                    <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-[var(--color-primary)] mb-6 transition-all duration-500 group-hover:bg-[var(--color-primary)] group-hover:text-white transform group-hover:scale-110 shadow-sm">
-                        <span class="material-icons text-3xl">{{ $iconMap[strtolower(trim((string) $pilar->nama))] ?? 'category' }}</span>
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 transform group-hover:scale-110 shadow-sm" style="background-color: {{ $pilarColor }}12; color: {{ $pilarColor }};">
+                        @if($pilarIconIsMaterial)
+                            <span class="material-icons text-3xl">{{ $pilarIcon }}</span>
+                        @else
+                            <span class="text-3xl leading-none">{{ $pilarIcon }}</span>
+                        @endif
                     </div>
 
-                    <h3 class="text-xl font-extrabold text-gray-900 mb-6 tracking-tight group-hover:text-[var(--color-primary)] transition-colors leading-tight">{{ $pilar->nama }}</h3>
+                    <h3 class="text-xl font-extrabold text-gray-900 mb-6 tracking-tight transition-colors leading-tight group-hover:opacity-90" style="color: {{ $pilarColor }};">{{ $pilar->nama }}</h3>
                     
-                    <div class="mt-auto flex items-center gap-2 text-[10px] font-bold text-gray-400 group-hover:text-[var(--color-primary)] uppercase tracking-widest transition-colors">
+                    <div class="mt-auto flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors" style="color: {{ $pilarColor }};">
                         Klik Untuk Detail <span class="material-icons text-sm transition-transform group-hover:translate-x-1">east</span>
                     </div>
                 </div>
@@ -140,11 +139,16 @@
                 <!-- Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
                     <div class="flex items-center gap-4 pr-4">
-                        <div class="w-12 h-12 shrink-0 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center">
-                            <span class="material-icons text-2xl" x-text="modalData?.icon"></span>
+                        <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center" :style="`background-color: ${modalData?.color ?? '#f97316'}1A; color: ${modalData?.color ?? '#f97316'}`">
+                            <template x-if="isMaterialIcon(modalData?.icon)">
+                                <span class="material-icons text-2xl" x-text="modalData?.icon"></span>
+                            </template>
+                            <template x-if="!isMaterialIcon(modalData?.icon)">
+                                <span class="text-2xl leading-none" x-text="modalData?.icon"></span>
+                            </template>
                         </div>
                         <div>
-                            <span class="text-[var(--color-primary)] font-bold uppercase tracking-widest text-[10px] mb-1 block">Detail Bidang</span>
+                            <span class="font-bold uppercase tracking-widest text-[10px] mb-1 block" :style="`color: ${modalData?.color ?? '#f97316'}`">Detail Bidang</span>
                             <h3 class="text-xl font-extrabold text-gray-900 leading-tight" x-text="modalData?.nama"></h3>
                         </div>
                     </div>
@@ -161,32 +165,41 @@
 
                     <!-- Summary Boxes -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                            <div class="bg-blue-100/50 p-3 rounded-xl text-blue-600">
-                                <span class="material-icons text-2xl">diversity_3</span>
+                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex items-start gap-3 hover:shadow-md transition-shadow min-w-0">
+                            <div class="bg-blue-100/50 p-2.5 rounded-xl text-blue-600 shrink-0">
+                                <span class="material-icons text-xl">diversity_3</span>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Program</div>
-                                <div class="text-2xl font-black text-gray-900 leading-none"><span x-text="modalData?.totalProgram"></span> <span class="text-sm font-medium text-gray-500">Program</span></div>
+                                <div class="mt-2 flex flex-col gap-1 min-w-0">
+                                    <span class="text-2xl font-black text-gray-900 leading-none" x-text="modalData?.totalProgram"></span>
+                                    <span class="text-sm font-medium text-gray-500 leading-tight">Program</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                            <div class="bg-purple-100/50 p-3 rounded-xl text-purple-600">
-                                <span class="material-icons text-2xl">task_alt</span>
+                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex items-start gap-3 hover:shadow-md transition-shadow min-w-0">
+                            <div class="bg-purple-100/50 p-2.5 rounded-xl text-purple-600 shrink-0">
+                                <span class="material-icons text-xl">task_alt</span>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Kegiatan</div>
-                                <div class="text-2xl font-black text-gray-900 leading-none"><span x-text="modalData?.totalKegiatan"></span> <span class="text-sm font-medium text-gray-500">Kegiatan</span></div>
+                                <div class="mt-2 flex flex-col gap-1 min-w-0">
+                                    <span class="text-2xl font-black text-gray-900 leading-none" x-text="modalData?.totalKegiatan"></span>
+                                    <span class="text-sm font-medium text-gray-500 leading-tight">Kegiatan</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                            <div class="bg-green-100/50 p-3 rounded-xl text-green-600">
-                                <span class="material-icons text-2xl">account_balance_wallet</span>
+                        <div class="bg-gray-50  rounded-2xl border border-gray-100 flex flex-col items-start  hover:shadow-md p-5 transition-shadow min-w-0">
+                            <div class="flex  gap-3 item-start">                            <div class="bg-green-100/50 p-2.5 rounded-xl text-green-600 shrink-0">
+                                <span class="material-icons text-xl">account_balance_wallet</span>
                             </div>
-                            <div>
-                                <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Pagu Program</div>
-                                <div class="text-xl font-black text-green-600 leading-none" x-text="modalData?.totalPagu"></div>
+                            <div class="min-w-0">
+                                <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Pagu Program</div>
+                                
                             </div>
+</div>
+<div class="mt-2 text-xl font-black text-green-600 leading-tight break-words" x-text="modalData?.totalPagu"></div>
+
                         </div>
                     </div>
 

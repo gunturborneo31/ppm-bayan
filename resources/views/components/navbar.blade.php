@@ -43,79 +43,23 @@
                     Beranda
                 </a>
 
-                <!-- Tentang Kami (Dropdown) -->
-                <div class="relative" @mouseenter="openDropdown('tentang')" @mouseleave="closeDropdown()">
-                    <button class="flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200"
-                            :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white hover:bg-white/10'">
-                        Tentang Kami
-                        <span class="material-icons text-sm transition-transform duration-200"
-                              :class="activeDropdown === 'tentang' ? 'rotate-180' : ''">expand_more</span>
-                    </button>
-                    <!-- Dropdown Panel -->
-                    <div x-show="activeDropdown === 'tentang'"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
-                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                         x-transition:leave-end="opacity-0 -translate-y-2 scale-95"
-                         class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-                         style="display: none;">
-                        <div class="p-2">
-                            <a href="/#tentang" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition group">
-                                <span class="material-icons text-lg text-orange-400">info</span>
-                                <div>
-                                    <div class="font-semibold text-sm">Profil Perusahaan</div>
-                                    <div class="text-xs text-gray-400">Visi, misi & operasional</div>
-                                </div>
-                            </a>
-                            <a href="/#dasar-hukum" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition group">
-                                <span class="material-icons text-lg text-orange-400">gavel</span>
-                                <div>
-                                    <div class="font-semibold text-sm">Dasar Hukum</div>
-                                    <div class="text-xs text-gray-400">Regulasi & payung hukum</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="/#tentang"
+                   class="px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200 hover:bg-white/10"
+                   :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white'">
+                    Profil Perusahaan
+                </a>
 
-                <!-- Program PPM (Dropdown) -->
-                <div class="relative" @mouseenter="openDropdown('program')" @mouseleave="closeDropdown()">
-                    <button class="flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200"
-                            :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white hover:bg-white/10'">
-                        Program PPM
-                        <span class="material-icons text-sm transition-transform duration-200"
-                              :class="activeDropdown === 'program' ? 'rotate-180' : ''">expand_more</span>
-                    </button>
-                    <div x-show="activeDropdown === 'program'"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
-                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                         x-transition:leave-end="opacity-0 -translate-y-2 scale-95"
-                         class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-                         style="display: none;">
-                        <div class="p-2">
-                            <div class="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pilar PPM</div>
-                            <a href="/#bidang" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition">
-                                <span class="material-icons text-lg text-orange-400">category</span>
-                                <div>
-                                    <div class="font-semibold text-sm">Bidang Program</div>
-                                    <div class="text-xs text-gray-400">8 pilar pemberdayaan</div>
-                                </div>
-                            </a>
-                            <a href="/#anggaran" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition">
-                                <span class="material-icons text-lg text-orange-400">account_balance_wallet</span>
-                                <div>
-                                    <div class="font-semibold text-sm">Anggaran PPM</div>
-                                    <div class="text-xs text-gray-400">Realisasi & rencana</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="/#dasar-hukum"
+                   class="px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200 hover:bg-white/10"
+                   :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white'">
+                    Dasar Hukum
+                </a>
+
+                <a href="/#pilar"
+                   class="px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200 hover:bg-white/10"
+                   :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white'">
+                    Pilar Program
+                </a>
 
                 <!-- Statistik -->
                 <a href="/#statistik"
@@ -125,7 +69,7 @@
                 </a>
 
                 <!-- Berita (Dropdown) -->
-                <div class="relative" @mouseenter="openDropdown('berita')" @mouseleave="closeDropdown()">
+                {{-- <div class="relative" @mouseenter="openDropdown('berita')" @mouseleave="closeDropdown()">
                     <button class="flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all duration-200"
                             :class="scrolled ? 'text-gray-700 hover:text-primary hover:bg-primary/5' : 'text-white/90 hover:text-white hover:bg-white/10'">
                         Berita
@@ -158,12 +102,17 @@
                             </a>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
             </div>
 
             <!-- Hamburger -->
             <div class="flex items-center gap-3">
+                <a href="{{ route('public.dashboard') }}"
+                   class="hidden md:inline-flex items-center rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 lg:text-[12px]"
+                   :class="scrolled ? 'border-orange-500 text-orange-600 hover:bg-orange-50' : 'border-white/70 text-white hover:bg-white/10'">
+                    Dashboard
+                </a>
 
                 <!-- Hamburger -->
                 <button @click="mobileMenuOpen = !mobileMenuOpen"
@@ -197,6 +146,15 @@
                 <span class="material-icons text-lg text-orange-400">home</span> Beranda
             </a>
 
+            <a @click="mobileMenuOpen = false" href="{{ route('public.dashboard') }}"
+               class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-800 hover:text-orange-600 hover:bg-orange-50 transition font-semibold">
+                <span class="material-icons text-lg text-orange-400">dashboard</span>
+                <div>
+                    <div class="font-semibold text-sm">Dashboard Publik</div>
+                    <div class="text-xs text-gray-400">Akses data tanpa login</div>
+                </div>
+            </a>
+
             <!-- Divider Label -->
             <div class="px-4 pt-3 pb-1">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tentang</p>
@@ -221,7 +179,7 @@
             <div class="px-4 pt-3 pb-1">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Program</p>
             </div>
-            <a @click="mobileMenuOpen = false" href="/#bidang"
+            <a @click="mobileMenuOpen = false" href="/#pilar"
                class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition">
                 <span class="material-icons text-lg text-orange-400">category</span>
                 <div>

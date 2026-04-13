@@ -62,7 +62,7 @@ class ResumeFeatureTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_resume_supports_year_triwulan_and_pagination_filters(): void
+    public function test_resume_supports_year_bulan_and_pagination_filters(): void
     {
         $user = User::factory()->createOne([
             'role' => 'superadmin',
@@ -90,7 +90,7 @@ class ResumeFeatureTest extends TestCase
             'program_id' => $program->id,
             'divisi_id' => $divisi->id,
             'nama' => 'Kegiatan Filter Resume',
-            'deskripsi' => 'Pengujian filter tahun dan triwulan',
+            'deskripsi' => 'Pengujian filter tahun dan bulan',
             'target_output' => 10,
             'satuan' => 'Unit',
             'rencana_biaya' => 1000000,
@@ -99,6 +99,7 @@ class ResumeFeatureTest extends TestCase
 
         $periode = Periode::query()->create([
             'tahun' => 2026,
+            'bulan' => 1,
             'triwulan' => 'Tw 1',
             'status' => true,
         ]);
@@ -108,17 +109,17 @@ class ResumeFeatureTest extends TestCase
             'periode_id' => $periode->id,
             'realisasi_output' => 4,
             'realisasi_biaya' => 250000,
-            'keterangan' => 'Realisasi triwulan pertama',
+            'keterangan' => 'Realisasi bulan pertama',
         ]);
 
         $response = $this->actingAs($authUser)->get(route('resume.index', [
             'tahun' => 2026,
-            'triwulan' => 'Tw 1',
+            'bulan' => 1,
             'per_page' => 15,
         ]));
 
         $response->assertOk();
-        $response->assertSee('Tw 1');
+        $response->assertSee('Jan');
         $response->assertSee('2026');
         $response->assertSee('Kegiatan Filter Resume');
     }

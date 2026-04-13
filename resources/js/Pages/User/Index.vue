@@ -22,7 +22,7 @@
             <td class="px-4 py-3 text-center">
               <span
                 class="px-2 py-0.5 rounded-full text-xs"
-                :class="u.role === 'superadmin' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'"
+                :class="roleBadgeClass(u.role)"
               >
                 {{ roleLabel(u.role) }}
               </span>
@@ -61,6 +61,7 @@
           <select v-model="form.role" class="input" :class="{ 'input-error': form.errors.role }">
             <option value="superadmin">Superadmin</option>
             <option value="divisi">Divisi</option>
+            <option value="pimpinan">Pimpinan</option>
           </select>
           <p v-if="form.errors.role" class="err">{{ form.errors.role }}</p>
         </div>
@@ -153,7 +154,15 @@ watch(
 )
 
 function roleLabel(role) {
-  return role === 'superadmin' ? 'Superadmin' : 'Divisi'
+  if (role === 'superadmin') return 'Superadmin'
+  if (role === 'pimpinan') return 'Pimpinan'
+  return 'Divisi'
+}
+
+function roleBadgeClass(role) {
+  if (role === 'superadmin') return 'bg-blue-100 text-blue-700'
+  if (role === 'pimpinan') return 'bg-purple-100 text-purple-700'
+  return 'bg-orange-100 text-orange-700'
 }
 
 function openCreate() {

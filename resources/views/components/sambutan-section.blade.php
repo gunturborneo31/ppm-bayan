@@ -3,14 +3,14 @@
 <div class="w-full font-[var(--font-sans)] relative z-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Grid Reorganized: Quote & Welcome di Kanan Atas, Pimpinan HANYA Foto di Kiri -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-stretch min-h-[500px] lg:min-h-[700px] py-10 relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-stretch min-h-[500px] lg:min-h-[600px] py-10 relative">
             
             <!-- Kolom KIRI: HANYA Foto & Nama Pimpinan (Digeser Ekstrim) -->
             <div class="lg:col-span-5 flex flex-col items-center justify-end lg:items-end pt-8 mb-10 lg:mb-0 order-2 lg:order-1 relative lg:-mt-12 xl:-mt-20">
                 <!-- Foto Sangat Besar (Bergeser ke Atas) -->
                 <img src="{{ asset('pimpinan.svg') }}" 
                      alt="{{ $pimpinan->nama ?? 'Foto Pimpinan' }}" 
-                     class="max-w-none w-80 sm:w-[26rem] md:w-[32rem] lg:w-[42rem] xl:w-[50rem] 2xl:w-[58rem] h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] z-10 pointer-events-none transition-transform duration-700 hover:scale-[1.03] lg:absolute lg:bottom-32 lg:-left-20 xl:-left-32 origin-bottom"
+                     class="max-w-none w-80 sm:w-[26rem] md:w-[32rem] lg:w-[42rem] xl:w-[50rem] 2xl:w-[58rem] h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] z-10 pointer-events-none transition-transform duration-700 hover:scale-[1.03] lg:absolute lg:bottom-28 lg:-left-20 xl:-left-32 origin-bottom"
                      style="mask-image: linear-gradient(to bottom, black 75%, transparent 98%); -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 98%);">
                 
                 <!-- Nama & Jabatan (Ikut Naik Sejajar Foto) -->
@@ -21,7 +21,7 @@
             </div>
 
             <!-- Kolom KANAN: Ucapan Selamat Datang -->
-            <div class="lg:col-span-7 flex flex-col h-full justify-center order-1 lg:order-2">
+            <div class="lg:col-span-7 flex flex-col h-full justify-center order-1 lg:order-2 lg:-mt-10 xl:-mt-14">
                 
                 <div class="mb-4 lg:mb-8">
                     <div class="flex items-center gap-4 mb-4 lg:mb-6">

@@ -26,6 +26,27 @@
         <div class="flex items-end gap-2">
           <button @click="applyFilters" class="btn-primary px-4">Terapkan Filter</button>
           <button v-if="filters.user_id || filters.divisi_id || filters.pilar_id" @click="clearFilters" class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors text-sm font-medium">Reset</button>
+                </div>
+                <div>
+                  <label class="label">Mode Periode</label>
+                  <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+                    <button
+                      v-for="mode in (stats.filter_options?.period_modes || defaultPeriodModes)"
+                      :key="mode.value"
+                      type="button"
+                      class="flex-1 py-2 text-xs font-medium transition-colors"
+                      :class="filters.period_mode === mode.value
+                        ? 'bg-[#062A57] text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'"
+                      @click="onPeriodModeChange(mode.value)"
+                    >
+                      {{ mode.label }}
+                    </button>
+                  </div>
+                </div>
+                <div class="flex items-end gap-2">
+                  <button @click="applyFilters" class="btn-primary px-4">Terapkan Filter</button>
+                  <button v-if="filters.user_id || filters.divisi_id || filters.pilar_id || filters.period_value" @click="clearFilters" class="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors text-sm font-medium">Reset</button>
         </div>
       </div>
     </div>
@@ -107,7 +128,7 @@
           </div>
           <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
             <p class="text-xs text-gray-500 uppercase">Kegiatan Butuh Verifikasi</p>
-            <p class="text-2xl font-bold mt-1.5 text-amber-600">{{ stats.kegiatan_status?.diajukan ?? 0 }}</p>
+            <p class="text-2xl font-bold mt-1.5 text-amber-600">{{ (stats.kegiatan_status?.diajukan ?? 0) + (stats.kegiatan_status?.diajukan_ulang ?? 0) }}</p>
           </div>
           <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
             <p class="text-xs text-gray-500 uppercase">Kegiatan Selesai</p>
@@ -116,7 +137,7 @@
         </div>
 
         <div class="bg-[#052A57] rounded-xl shadow-sm p-5 text-white">
-          <h3 class="font-semibold text-base mb-4">Capaian per TW</h3>
+          <h3 class="font-semibold text-base mb-4">Capaian per {{ capaianTitle }}</h3>
           <div class="space-y-3">
             <div v-for="row in stats.quarterly_capaian || []" :key="row.label">
               <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
@@ -146,8 +167,12 @@
           class="bg-[#EEF2F8] rounded-xl p-4 border border-[#E5EBF4]"
         >
           <div class="flex items-center justify-between mb-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" :class="pilarIconClass(idx)">
-              {{ row.icon }}
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+              :style="{ backgroundColor: toRgba(row.color, 0.16), color: row.color || '#0F4680' }"
+            >
+              <span v-if="isMaterialIconName(row.icon)" class="material-icons text-[16px] leading-none">{{ row.icon }}</span>
+              <span v-else class="leading-none">{{ row.icon }}</span>
             </div>
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md" :class="pilarBadgeClass(row.persentase)">
               {{ formatPercent(row.persentase) }}%
@@ -180,7 +205,7 @@
           </div>
 
           <div class="mt-3 h-1 rounded-full bg-[#D8E1ED] overflow-hidden">
-            <div class="h-full rounded-full" :class="pilarBarClass(idx)" :style="{ width: `${safePercent(row.persentase)}%` }" />
+            <div class="h-full rounded-full" :style="{ width: `${safePercent(row.persentase)}%`, backgroundColor: row.color || '#0F4680' }" />
           </div>
         </div>
       </div>
@@ -199,31 +224,31 @@
           <thead class="bg-gray-50 border-b border-gray-100 text-gray-600">
             <tr>
               <th class="text-left px-6 py-3 font-medium">Nama Divisi</th>
-              <th class="text-right px-6 py-3 font-medium">Jumlah Program</th>
-              <th class="text-right px-6 py-3 font-medium">Jumlah Kegiatan</th>
-              <th class="text-right px-6 py-3 font-medium">Total Anggaran</th>
-              <th class="text-right px-6 py-3 font-medium">Total Realisasi</th>
-              <th class="text-right px-6 py-3 font-medium">Persentase Serapan</th>
+              <th class="text-right px-6 py-3 font-medium whitespace-nowrap">Jumlah Program</th>
+              <th class="text-right px-6 py-3 font-medium whitespace-nowrap">Jumlah Kegiatan</th>
+              <th class="text-right px-6 py-3 font-medium whitespace-nowrap">Total Anggaran</th>
+              <th class="text-right px-6 py-3 font-medium whitespace-nowrap">Total Realisasi</th>
+              <th class="text-right px-6 py-3 font-medium whitespace-nowrap">Persentase Serapan</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="row in (stats.divisi_summary || [])" :key="row.id" class="hover:bg-gray-50">
               <td class="px-6 py-3 font-medium text-gray-800">{{ row.nama }}</td>
-              <td class="px-6 py-3 text-right text-gray-700">{{ row.jumlah_program }}</td>
-              <td class="px-6 py-3 text-right text-gray-700">{{ row.jumlah_kegiatan }}</td>
+              <td class="px-6 py-3 text-right text-gray-700 whitespace-nowrap">{{ row.jumlah_program }}</td>
+              <td class="px-6 py-3 text-right text-gray-700 whitespace-nowrap">{{ row.jumlah_kegiatan }}</td>
               <td class="px-6 py-3 text-gray-700">
-                <span class="inline-grid grid-cols-[18px_minmax(0,1fr)] items-center gap-1 min-w-[150px] ml-auto text-right tabular-nums">
+                <span class="inline-grid grid-cols-[18px_minmax(0,1fr)] items-center gap-1 min-w-[150px] ml-auto text-right tabular-nums whitespace-nowrap">
                   <span class="text-left">Rp</span>
                   <span>{{ formatNumber(row.total_anggaran) }}</span>
                 </span>
               </td>
               <td class="px-6 py-3 text-gray-700">
-                <span class="inline-grid grid-cols-[18px_minmax(0,1fr)] items-center gap-1 min-w-[150px] ml-auto text-right tabular-nums">
+                <span class="inline-grid grid-cols-[18px_minmax(0,1fr)] items-center gap-1 min-w-[150px] ml-auto text-right tabular-nums whitespace-nowrap">
                   <span class="text-left">Rp</span>
                   <span>{{ formatNumber(row.total_realisasi) }}</span>
                 </span>
               </td>
-              <td class="px-6 py-3 text-right">
+              <td class="px-6 py-3 text-right whitespace-nowrap">
                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
                   {{ formatPercent(row.persentase_serapan) }}%
                 </span>
@@ -254,21 +279,43 @@ const maxMonthlyValue = computed(() => {
 })
 
 const filters = ref({
-  user_id: page.props.stats?.selected_filters?.user_id || '',
-  divisi_id: page.props.stats?.selected_filters?.divisi_id || '',
-  pilar_id: page.props.stats?.selected_filters?.pilar_id || '',
+  user_id: props.stats?.selected_filters?.user_id || '',
+  divisi_id: props.stats?.selected_filters?.divisi_id || '',
+  pilar_id: props.stats?.selected_filters?.pilar_id || '',
+  period_mode: props.stats?.selected_filters?.period_mode || 'bulan',
+  period_value: props.stats?.selected_filters?.period_value ?? '',
 })
+
+const defaultPeriodModes = [
+  { value: 'bulan', label: 'Bulan' },
+  { value: 'triwulan', label: 'TW' },
+  { value: 'semester', label: 'Semester' },
+]
+
+const capaianTitle = computed(() => {
+  if (filters.value.period_mode === 'triwulan') return 'Triwulan'
+  if (filters.value.period_mode === 'semester') return 'Semester'
+  return 'Bulan'
+})
+
+function onPeriodModeChange(mode) {
+  filters.value.period_mode = mode
+  filters.value.period_value = ''
+  applyFilters()
+}
 
 function applyFilters() {
   const params = {}
   if (filters.value.user_id) params.user_id = filters.value.user_id
   if (filters.value.divisi_id) params.divisi_id = filters.value.divisi_id
   if (filters.value.pilar_id) params.pilar_id = filters.value.pilar_id
+    if (filters.value.period_mode && filters.value.period_mode !== 'bulan') params.period_mode = filters.value.period_mode
+    if (filters.value.period_value !== '' && filters.value.period_value !== null) params.period_value = filters.value.period_value
   router.get(route('dashboard'), params)
 }
 
 function clearFilters() {
-  filters.value = { user_id: '', divisi_id: '', pilar_id: '' }
+  filters.value = { user_id: '', divisi_id: '', pilar_id: '', period_mode: 'bulan', period_value: '' }
   router.get(route('dashboard'))
 }
 
@@ -295,17 +342,17 @@ function compactThousand(v) {
   return value.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
 
-function pilarBarClass(index) {
-  return ['bg-[#0F4680]', 'bg-[#9A7B05]', 'bg-[#C32727]', 'bg-[#0F4680]'][index % 4]
+function isMaterialIconName(icon) {
+  return /^[a-z0-9_]+$/.test(String(icon || '').trim())
 }
 
-function pilarIconClass(index) {
-  return [
-    'bg-[#E7EFF9] text-[#0F4680]',
-    'bg-[#F8F1D8] text-[#9A7B05]',
-    'bg-[#FBE3E3] text-[#C32727]',
-    'bg-[#E7EFF9] text-[#0F4680]',
-  ][index % 4]
+function toRgba(hex, alpha = 1) {
+  const value = String(hex || '').trim()
+  if (!/^#[0-9A-Fa-f]{6}$/.test(value)) return `rgba(15, 70, 128, ${alpha})`
+  const r = parseInt(value.slice(1, 3), 16)
+  const g = parseInt(value.slice(3, 5), 16)
+  const b = parseInt(value.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 function pilarBadgeClass(percent) {

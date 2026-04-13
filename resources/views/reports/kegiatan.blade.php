@@ -18,6 +18,7 @@
         <thead>
             <tr>
                 <th>Nama Kegiatan</th>
+                <th>Lokasi</th>
                 <th>Program</th>
                 <th>Divisi</th>
                 <th>Status</th>
@@ -32,6 +33,7 @@
             @foreach($kegiatans as $k)
             <tr>
                 <td>{{ $k['nama'] }}</td>
+                <td>{{ $k['lokasi'] ?? '-' }}</td>
                 <td>{{ $k['program'] }}</td>
                 <td>{{ $k['divisi'] }}</td>
                 <td>{{ $k['status'] }}</td>

@@ -1,4 +1,20 @@
-<section id="dasar-hukum" class="py-16 md:py-24 bg-white relative" x-data="{ modalOpen: false, modalData: null }">
+<section id="dasar-hukum" class="py-16 md:py-24 bg-white relative" x-data="{ 
+    modalOpen: false, 
+    modalData: null,
+    previewSrc(link) {
+        if (!link || link === '#') {
+            return '';
+        }
+
+        const isLocalDocument = link.startsWith('/') || link.startsWith(window.location.origin);
+
+        if (isLocalDocument) {
+            return link;
+        }
+
+        return 'https://docs.google.com/viewer?url=' + encodeURIComponent(link) + '&embedded=true';
+    }
+}">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 relative z-10">
             <span class="text-[var(--color-primary)] font-bold uppercase tracking-[0.3em] text-[10px] mb-4 block">Regulatory Framework</span>
@@ -6,6 +22,10 @@
             <p class="text-gray-500 max-w-2xl mx-auto text-base md:text-lg">
                 Seluruh program dan pelaporan Tanggung Jawab Sosial dan Lingkungan (TJSL) kami didasarkan pada payung hukum yang kuat:
             </p>
+            {{-- <p class="mt-4 inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
+                <span class="material-icons text-base">admin_panel_settings</span>
+                Dokumen diunggah oleh admin
+            </p> --}}
         </div>
 
         @php
@@ -105,7 +125,7 @@
                     <!-- Iframe preview -->
                     <template x-if="modalData?.link && modalData.link !== '#'">
                         <iframe
-                            :src="'https://docs.google.com/viewer?url=' + encodeURIComponent(modalData.link) + '&embedded=true'"
+                            :src="previewSrc(modalData.link)"
                             class="absolute inset-0 w-full h-full border-0 z-10"
                             allowfullscreen
                             loading="lazy"
@@ -126,7 +146,10 @@
 
                 <!-- Footer Actions -->
                 <div class="flex items-center justify-between gap-3 p-4 border-t border-gray-100 shrink-0 bg-white rounded-b-3xl">
-                    <p class="text-[11px] text-gray-400">Pratinjau dokumen melalui Google Docs Viewer</p>
+                    <div>
+                        <p class="text-[11px] text-gray-400">Pratinjau dokumen regulasi</p>
+                        <p class="mt-1 text-[11px] font-medium text-gray-500">Dokumen ini diunggah oleh admin.</p>
+                    </div>
                     <a :href="modalData?.link" target="_blank" rel="noopener noreferrer"
                        x-show="modalData?.link && modalData.link !== '#'"
                        class="inline-flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-5 py-2.5 rounded-xl font-bold text-xs tracking-widest uppercase transition-all shadow-md hover:shadow-lg">

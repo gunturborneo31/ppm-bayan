@@ -19,6 +19,10 @@
 
           <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500">Pilar</p>
+              <p class="font-semibold text-gray-800 mt-0.5">{{ program.pilar?.nama || '-' }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500">Target Output</p>
               <p class="font-semibold text-gray-800 mt-0.5">{{ program.target_output }}</p>
             </div>

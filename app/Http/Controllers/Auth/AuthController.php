@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -12,6 +13,11 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
+            /** @var User|null $user */
+            $user = Auth::user();
+            if ($user?->isPimpinan()) {
+                return redirect()->route('resume.pilar.index');
+            }
             return redirect()->route('dashboard');
         }
         return Inertia::render('Auth/Login');
@@ -26,7 +32,14 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('dashboard'));
+            /** @var User|null $user */
+            $user = Auth::user();
+
+            $target = $user?->isPimpinan()
+                ? route('resume.pilar.index')
+                : route('dashboard');
+
+            return redirect()->intended($target);
         }
 
         return back()->withErrors(['email' => 'Email atau password salah.'])->onlyInput('email');

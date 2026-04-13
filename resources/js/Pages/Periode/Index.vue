@@ -9,7 +9,7 @@
         <thead class="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
           <tr>
             <th class="sticky top-0 z-10 text-left px-4 py-3 font-medium text-gray-600 bg-gray-50">Tahun</th>
-            <th class="sticky top-0 z-10 text-left px-4 py-3 font-medium text-gray-600 bg-gray-50">Triwulan</th>
+            <th class="sticky top-0 z-10 text-left px-4 py-3 font-medium text-gray-600 bg-gray-50">Bulan</th>
             <th class="sticky top-0 z-10 text-center px-4 py-3 font-medium text-gray-600 bg-gray-50">Status</th>
             <th class="sticky top-0 z-10 px-4 py-3 bg-gray-50" />
           </tr>
@@ -18,7 +18,7 @@
           <tr v-for="p in periodes" :key="p.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium text-gray-800">{{ p.tahun }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background:rgba(215,86,30,0.1);color:#D7561E">{{ p.triwulan }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background:rgba(215,86,30,0.1);color:#D7561E">{{ p.bulan_label || p.triwulan }}</span>
             </td>
             <td class="px-4 py-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-xs" :class="p.status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">
@@ -48,20 +48,22 @@
             <p v-if="form.errors.tahun" class="err">{{ form.errors.tahun }}</p>
           </div>
           <div>
-            <label class="label">Triwulan</label>
-            <select v-model="form.triwulan" class="input" :class="{'input-error': form.errors.triwulan}">
+            <label class="label">Bulan</label>
+            <select v-model="form.bulan" class="input" :class="{'input-error': form.errors.bulan}">
               <option value="">-- Pilih --</option>
-              <option value="Tw 1">Tw 1 (Jan–Mar)</option>
-              <option value="Tw 2">Tw 2 (Apr–Jun)</option>
-              <option value="Tw 3">Tw 3 (Jul–Sep)</option>
-              <option value="Tw 4">Tw 4 (Okt–Des)</option>
+              <option v-for="b in bulanOptions" :key="b.value" :value="b.value">{{ b.label }}</option>
             </select>
-            <p v-if="form.errors.triwulan" class="err">{{ form.errors.triwulan }}</p>
+            <p v-if="form.errors.bulan" class="err">{{ form.errors.bulan }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <input v-model="form.status" type="checkbox" id="status" class="rounded" />
-          <label for="status" class="text-sm text-gray-700">Aktif</label>
+        <div>
+          <label class="label">Status</label>
+          <select v-model="form.status" class="input" :class="{'input-error': form.errors.status}">
+            <option value="">-- Pilih Status --</option>
+            <option :value="1">Aktif</option>
+            <option :value="0">Nonaktif</option>
+          </select>
+          <p v-if="form.errors.status" class="err">{{ form.errors.status }}</p>
         </div>
         <div class="flex gap-3 justify-end pt-2">
           <button type="button" @click="closeModal" class="btn-secondary">Batal</button>
@@ -88,12 +90,13 @@ import { useForm, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Modal from '@/Components/Modal.vue'
 
-const props = defineProps({ periodes: Array })
+const props = defineProps({ periodes: Array, bulan_options: Array })
 const showModal = ref(false), showDeleteModal = ref(false), editing = ref(null), deleting = ref(null)
-const form = useForm({ tahun: new Date().getFullYear(), triwulan: 'Tw 1', status: true })
+const form = useForm({ tahun: new Date().getFullYear(), bulan: '', status: '' })
+const bulanOptions = props.bulan_options || []
 
-function openCreate() { editing.value = null; form.reset(); form.tahun = new Date().getFullYear(); form.triwulan = 'Tw 1'; form.status = true; showModal.value = true }
-function openEdit(p) { editing.value = p; form.tahun = p.tahun; form.triwulan = p.triwulan; form.status = p.status; showModal.value = true }
+function openCreate() { editing.value = null; form.reset(); form.tahun = new Date().getFullYear(); form.bulan = ''; form.status = ''; showModal.value = true }
+function openEdit(p) { editing.value = p; form.tahun = p.tahun; form.bulan = p.bulan; form.status = Number(p.status); showModal.value = true }
 function closeModal() { showModal.value = false; form.clearErrors() }
 function save() {
   editing.value

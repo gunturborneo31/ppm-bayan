@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\FileLampiran;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -50,6 +51,15 @@ class FileController extends Controller
     {
         abort_unless(Storage::disk('public')->exists($file->file_path), 404);
         return Storage::disk('public')->download($file->file_path, $file->file_name);
+    }
+
+    public function preview(FileLampiran $file): Response
+    {
+        abort_unless(Storage::disk('public')->exists($file->file_path), 404);
+
+        return Storage::disk('public')->response($file->file_path, $file->file_name, [
+            'Content-Disposition' => 'inline; filename="' . addslashes($file->file_name) . '"',
+        ]);
     }
 
     public function destroy(FileLampiran $file)

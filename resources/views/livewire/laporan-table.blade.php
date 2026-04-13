@@ -108,7 +108,7 @@
                     <th class="px-4 py-3 text-left font-semibold">Perusahaan</th>
                     <th class="px-4 py-3 text-left font-semibold">Program</th>
                     <th class="px-4 py-3 text-left font-semibold">Lokasi</th>
-                    <th class="px-4 py-3 text-right font-semibold">Nominal (Rp)</th>
+                    <th class="px-4 py-3 text-right font-semibold whitespace-nowrap">Nominal (Rp)</th>
                 </tr>
             </thead>
             <tbody wire:loading.remove wire:target="search, bidang, tahun" class="divide-y divide-gray-100 bg-white">
@@ -119,7 +119,7 @@
                         <td class="px-4 py-3">{{ $laporan->perusahaan->nama ?? '-' }}</td>
                         <td class="px-4 py-3">{{ $laporan->program->nama ?? '-' }}</td>
                         <td class="px-4 py-3">{{ $laporan->lokasi ?? '-' }}</td>
-                        <td class="px-4 py-3 text-right font-medium text-gray-900">{{ number_format($laporan->nominal, 0, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">{{ number_format($laporan->nominal, 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>

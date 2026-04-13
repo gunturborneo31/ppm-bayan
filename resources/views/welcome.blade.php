@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite('resources/js/app.js')
     @if (class_exists(\Livewire\Livewire::class))
         @livewireStyles
     @endif
@@ -52,7 +52,7 @@
                 'umum'    => ['bg' => 'bg-[var(--color-primary)]', 'text' => 'text-white'],
             ];
         @endphp
-        <section id="pengumuman" class="py-16 md:py-24 bg-gray-50 border-t border-gray-100 relative overflow-hidden">
+        <section id="pengumuman" class="py-16 md:py-24 bg-gray-50  relative overflow-hidden">
             <!-- Ornamen -->
             <div class="absolute top-0 right-0 w-96 h-96 bg-[var(--color-primary)]/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -208,7 +208,6 @@
         <x-section-statistik />
 
         <!-- Section 7: Berita & Artikel Terbaru -->
-        <x-section-berita />
 
         <!-- Section 8: Tabel Laporan Detail & Filter -->
         <x-section-laporan />

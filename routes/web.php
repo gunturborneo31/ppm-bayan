@@ -6,12 +6,17 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DivisiController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\PeriodeController;
+use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PilarController;
+use App\Http\Controllers\PublicDashboardController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\RealisasiController;
+use App\Http\Controllers\RegulasiController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResumeController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Kunjungan;
@@ -52,8 +57,9 @@ Route::get('/berita/{slug}', function ($slug) {
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/dashboard-publik', [PublicDashboardController::class, 'index'])->name('public.dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'pimpinan.resume-only'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/resume', [ResumeController::class, 'index'])->name('resume.index');
     Route::get('/resume/pilar', [ResumeController::class, 'pilar'])->name('resume.pilar.index');
@@ -69,12 +75,20 @@ Route::middleware('auth')->group(function () {
         Route::resource('divisi', DivisiController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('pilar', PilarController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('periode', PeriodeController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('lokasi', LokasiController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('lokasi/{lokasi}/merge', [LokasiController::class, 'merge'])->name('lokasi.merge');
         Route::resource('program', ProgramController::class)->only(['index', 'store', 'update', 'destroy', 'show']);
         Route::resource('user', UserController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('pengumuman', PengumumanController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('regulasi', RegulasiController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('settings/{setting}', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/toggle-planning-lock', [SettingsController::class, 'togglePlanningLock'])->name('settings.togglePlanningLock');
     });
 
     // Kegiatan
     Route::resource('kegiatan', KegiatanController::class)->only(['index', 'store', 'update', 'destroy', 'show']);
+    Route::post('kegiatan/{kegiatan}/comments', [KegiatanController::class, 'storeComment'])->name('kegiatan.comments.store');
     Route::get('perencanaan', [KegiatanController::class, 'perencanaan'])->name('perencanaan.index');
     Route::post('kegiatan/{kegiatan}/submit', [KegiatanController::class, 'submit'])->name('kegiatan.submit');
     Route::post('kegiatan/{kegiatan}/approve', [KegiatanController::class, 'approve'])->middleware('superadmin')->name('kegiatan.approve');
@@ -86,6 +100,7 @@ Route::middleware('auth')->group(function () {
     // Files
     Route::post('files/upload', [FileController::class, 'upload'])->name('files.upload');
     Route::delete('files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
+    Route::get('files/{file}/preview', [FileController::class, 'preview'])->name('files.preview');
     Route::get('files/{file}/download', [FileController::class, 'download'])->name('files.download');
 
     // Activity Log

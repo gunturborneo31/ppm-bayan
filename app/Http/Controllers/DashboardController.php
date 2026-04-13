@@ -22,15 +22,23 @@ class DashboardController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $selectedUserId = request('user_id');
+        $ownedByUserId = $user->isSuperadmin() ? null : (int) $user->id;
         $selectedDivisiId = $this->canonicalDivisiId(request('divisi_id'));
         $selectedPilarId = $this->canonicalPilarId(request('pilar_id'));
+        $periodMode = in_array(request('period_mode'), ['bulan', 'triwulan', 'semester'], true)
+            ? request('period_mode')
+            : 'bulan';
+        $periodValue = request('period_value') !== null && request('period_value') !== ''
+            ? (int) request('period_value')
+            : null;
 
         $forcedDivisiId = $user->isSuperadmin() ? null : $this->canonicalDivisiId($user->divisi_id);
         $kegiatanBaseQuery = $this->buildKegiatanQuery(
             $selectedUserId,
             $selectedDivisiId,
             $selectedPilarId,
-            $forcedDivisiId
+            $forcedDivisiId,
+            $ownedByUserId
         );
 
         $kegiatanIds = (clone $kegiatanBaseQuery)->pluck('id');
@@ -40,6 +48,18 @@ class DashboardController extends Controller
         $totalPagu = (float) Program::query()
             ->whereIn('programs.id', $canonicalProgramIds)
             ->when($selectedUserId, fn($q) => $q->where('user_id', $selectedUserId))
+            ->when($ownedByUserId, function ($q) use ($ownedByUserId) {
+                return $q->whereHas('kegiatans', function ($kq) use ($ownedByUserId) {
+                    $kq->whereExists(function ($sub) use ($ownedByUserId) {
+                        $sub->selectRaw('1')
+                            ->from('activity_logs')
+                            ->whereColumn('activity_logs.subject_id', 'kegiatans.id')
+                            ->where('activity_logs.subject_type', Kegiatan::class)
+                            ->where('activity_logs.user_id', $ownedByUserId)
+                            ->whereIn('activity_logs.action', ['create', 'submit']);
+                    });
+                });
+            })
             ->when($selectedDivisiId || $forcedDivisiId, function ($q) use ($selectedDivisiId, $forcedDivisiId) {
                 $targetDivisiId = $forcedDivisiId ?: $selectedDivisiId;
                 return $q->whereHas('kegiatans', fn($kq) => $kq->where('divisi_id', $targetDivisiId));
@@ -50,7 +70,7 @@ class DashboardController extends Controller
                     if ($targetDivisiId) {
                         $kq->where('divisi_id', $targetDivisiId);
                     }
-                    $kq->whereHas('pilars', fn($pq) => $pq->where('pilars.id', $selectedPilarId));
+                    $kq->whereHas('program', fn($pq) => $pq->where('pilar_id', $selectedPilarId));
                 });
             })
             ->sum('rencana_biaya');
@@ -67,7 +87,7 @@ class DashboardController extends Controller
 
         $stats = [
             'summary' => [
-                'total_pagu' => $totalPagu,
+                'total_pagu' => $ownedByUserId ? $totalRencanaBiaya : $totalPagu,
                 'total_rencana_biaya' => $totalRencanaBiaya,
                 'total_realisasi_biaya' => $totalRealisasiBiaya,
                 'sisa_anggaran' => $sisaAnggaran,
@@ -77,6 +97,18 @@ class DashboardController extends Controller
             'total_program' => Program::query()
                 ->whereIn('programs.id', $canonicalProgramIds)
                 ->when($selectedUserId, fn($q) => $q->where('user_id', $selectedUserId))
+                ->when($ownedByUserId, function ($q) use ($ownedByUserId) {
+                    return $q->whereHas('kegiatans', function ($kq) use ($ownedByUserId) {
+                        $kq->whereExists(function ($sub) use ($ownedByUserId) {
+                            $sub->selectRaw('1')
+                                ->from('activity_logs')
+                                ->whereColumn('activity_logs.subject_id', 'kegiatans.id')
+                                ->where('activity_logs.subject_type', Kegiatan::class)
+                                ->where('activity_logs.user_id', $ownedByUserId)
+                                ->whereIn('activity_logs.action', ['create', 'submit']);
+                        });
+                    });
+                })
                 ->when($selectedDivisiId || $forcedDivisiId, function ($q) use ($selectedDivisiId, $forcedDivisiId) {
                     $targetDivisiId = $forcedDivisiId ?: $selectedDivisiId;
                     return $q->whereHas('kegiatans', fn($kq) => $kq->where('divisi_id', $targetDivisiId));
@@ -87,7 +119,7 @@ class DashboardController extends Controller
                         if ($targetDivisiId) {
                             $kq->where('divisi_id', $targetDivisiId);
                         }
-                        $kq->whereHas('pilars', fn($pq) => $pq->where('pilars.id', $selectedPilarId));
+                        $kq->whereHas('program', fn($pq) => $pq->where('pilar_id', $selectedPilarId));
                     });
                 })
                 ->count(),
@@ -97,19 +129,50 @@ class DashboardController extends Controller
                 ->groupBy('status')
                 ->pluck('total', 'status'),
             'monthly_realisasi' => $this->buildMonthlyRealisasi($kegiatanIds),
-            'quarterly_capaian' => $this->buildQuarterlyCapaian($kegiatanIds, $totalRencanaBiaya),
-            'pilar_summary' => $this->buildPilarSummary($selectedUserId, $selectedDivisiId, $selectedPilarId, $forcedDivisiId),
-            'divisi_summary' => $this->buildDivisiSummary($selectedUserId, $selectedDivisiId, $selectedPilarId, $forcedDivisiId),
-            'recent_logs' => ActivityLog::with('user')->latest()->limit(10)->get(),
+            'quarterly_capaian' => $this->buildPeriodCapaian($kegiatanIds, $totalRencanaBiaya, $periodMode),
+            'pilar_summary' => $this->buildPilarSummary($selectedUserId, $selectedDivisiId, $selectedPilarId, $forcedDivisiId, $ownedByUserId),
+            'divisi_summary' => $this->buildDivisiSummary($selectedUserId, $selectedDivisiId, $selectedPilarId, $forcedDivisiId, $ownedByUserId),
+            'recent_logs' => ActivityLog::with('user')
+                ->when($ownedByUserId, fn($q) => $q->where('user_id', $ownedByUserId))
+                ->latest()
+                ->limit(10)
+                ->get(),
             'filter_options' => [
                 'users' => User::where('role', 'superadmin')->orWhere('role', 'divisi')->get(['id', 'name']),
                 'divisis' => $this->canonicalDivisis(),
                 'pilars' => $this->canonicalPilars(),
+                            'period_modes' => [
+                                ['value' => 'bulan', 'label' => 'Bulan'],
+                                ['value' => 'triwulan', 'label' => 'Triwulan'],
+                                ['value' => 'semester', 'label' => 'Semester'],
+                            ],
+                            'period_options' => [
+                                'bulan' => [
+                                    ['value' => 1, 'label' => 'Jan'], ['value' => 2, 'label' => 'Feb'],
+                                    ['value' => 3, 'label' => 'Mar'], ['value' => 4, 'label' => 'Apr'],
+                                    ['value' => 5, 'label' => 'Mei'], ['value' => 6, 'label' => 'Jun'],
+                                    ['value' => 7, 'label' => 'Jul'], ['value' => 8, 'label' => 'Agu'],
+                                    ['value' => 9, 'label' => 'Sep'], ['value' => 10, 'label' => 'Okt'],
+                                    ['value' => 11, 'label' => 'Nov'], ['value' => 12, 'label' => 'Des'],
+                                ],
+                                'triwulan' => [
+                                    ['value' => 1, 'label' => 'Tw 1 (Jan–Mar)'],
+                                    ['value' => 2, 'label' => 'Tw 2 (Apr–Jun)'],
+                                    ['value' => 3, 'label' => 'Tw 3 (Jul–Sep)'],
+                                    ['value' => 4, 'label' => 'Tw 4 (Okt–Des)'],
+                                ],
+                                'semester' => [
+                                    ['value' => 1, 'label' => 'Sem 1 (Jan–Jun)'],
+                                    ['value' => 2, 'label' => 'Sem 2 (Jul–Des)'],
+                                ],
+                            ],
             ],
             'selected_filters' => [
-                'user_id' => $selectedUserId,
+                'user_id' => $ownedByUserId ?: $selectedUserId,
                 'divisi_id' => $forcedDivisiId ?: $selectedDivisiId,
                 'pilar_id' => $selectedPilarId,
+                            'period_mode' => $periodMode,
+                            'period_value' => $periodValue,
             ],
             'is_superadmin' => $user->isSuperadmin(),
             'chart_year' => Carbon::now()->year,
@@ -118,7 +181,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/Index', compact('stats'));
     }
 
-    private function buildKegiatanQuery($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null): Builder
+    private function buildKegiatanQuery($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null, $ownedByUserId = null): Builder
     {
         $canonicalKegiatanIds = DB::table('kegiatans')
             ->selectRaw('MIN(id) as id')
@@ -129,7 +192,17 @@ class DashboardController extends Controller
             ->when($selectedUserId, fn($q) => $q->whereHas('program', fn($q2) => $q2->where('user_id', $selectedUserId)))
             ->when($selectedDivisiId, fn($q) => $q->where('divisi_id', $selectedDivisiId))
             ->when($forcedDivisiId, fn($q) => $q->where('divisi_id', $forcedDivisiId))
-            ->when($selectedPilarId, fn($q) => $q->whereHas('pilars', fn($q2) => $q2->where('pilars.id', $selectedPilarId)));
+            ->when($ownedByUserId, function ($q) use ($ownedByUserId) {
+                return $q->whereExists(function ($sub) use ($ownedByUserId) {
+                    $sub->selectRaw('1')
+                        ->from('activity_logs')
+                        ->whereColumn('activity_logs.subject_id', 'kegiatans.id')
+                        ->where('activity_logs.subject_type', Kegiatan::class)
+                        ->where('activity_logs.user_id', $ownedByUserId)
+                        ->whereIn('activity_logs.action', ['create', 'submit']);
+                });
+            })
+            ->when($selectedPilarId, fn($q) => $q->whereHas('program', fn($q2) => $q2->where('pilar_id', $selectedPilarId)));
     }
 
     private function canonicalProgramIdsQuery()
@@ -230,38 +303,75 @@ class DashboardController extends Controller
 
     private function buildQuarterlyCapaian($kegiatanIds, $totalRencanaBiaya)
     {
-        $labels = ['Tw 1', 'Tw 2', 'Tw 3', 'Tw 4'];
+        return $this->buildPeriodCapaian($kegiatanIds, $totalRencanaBiaya, 'bulan');
+    }
+
+    private function buildPeriodCapaian($kegiatanIds, $totalRencanaBiaya, string $mode = 'bulan')
+    {
+        if ($mode === 'triwulan') {
+            $groups = [
+                1 => ['label' => 'Tw 1', 'from' => 1, 'to' => 3],
+                2 => ['label' => 'Tw 2', 'from' => 4, 'to' => 6],
+                3 => ['label' => 'Tw 3', 'from' => 7, 'to' => 9],
+                4 => ['label' => 'Tw 4', 'from' => 10, 'to' => 12],
+            ];
+        } elseif ($mode === 'semester') {
+            $groups = [
+                1 => ['label' => 'Sem 1', 'from' => 1, 'to' => 6],
+                2 => ['label' => 'Sem 2', 'from' => 7, 'to' => 12],
+            ];
+        } else {
+            $groups = [
+                1  => ['label' => 'Jan', 'from' => 1,  'to' => 1],
+                2  => ['label' => 'Feb', 'from' => 2,  'to' => 2],
+                3  => ['label' => 'Mar', 'from' => 3,  'to' => 3],
+                4  => ['label' => 'Apr', 'from' => 4,  'to' => 4],
+                5  => ['label' => 'Mei', 'from' => 5,  'to' => 5],
+                6  => ['label' => 'Jun', 'from' => 6,  'to' => 6],
+                7  => ['label' => 'Jul', 'from' => 7,  'to' => 7],
+                8  => ['label' => 'Agu', 'from' => 8,  'to' => 8],
+                9  => ['label' => 'Sep', 'from' => 9,  'to' => 9],
+                10 => ['label' => 'Okt', 'from' => 10, 'to' => 10],
+                11 => ['label' => 'Nov', 'from' => 11, 'to' => 11],
+                12 => ['label' => 'Des', 'from' => 12, 'to' => 12],
+            ];
+        }
 
         if ($kegiatanIds->isEmpty()) {
-            return collect($labels)->map(fn($label) => ['label' => $label, 'persentase' => 0, 'realisasi' => 0])->values();
+            return collect($groups)->map(fn ($g) => ['label' => $g['label'], 'persentase' => 0, 'realisasi' => 0])->values();
         }
 
         $rows = Realisasi::query()
             ->join('periodes', 'periodes.id', '=', 'realisasis.periode_id')
             ->whereIn('realisasis.kegiatan_id', $kegiatanIds)
-            ->selectRaw('periodes.triwulan, COALESCE(SUM(realisasis.realisasi_biaya), 0) as total_realisasi')
-            ->groupBy('periodes.triwulan')
-            ->pluck('total_realisasi', 'periodes.triwulan');
+            ->whereNotNull('periodes.bulan')
+            ->selectRaw('periodes.bulan, COALESCE(SUM(realisasis.realisasi_biaya), 0) as total_realisasi')
+            ->groupBy('periodes.bulan')
+            ->pluck('total_realisasi', 'periodes.bulan');
 
-        return collect($labels)->map(function ($label) use ($rows, $totalRencanaBiaya) {
-            $realisasi = (float) ($rows[$label] ?? 0);
+        return collect($groups)->map(function ($g) use ($rows, $totalRencanaBiaya) {
+            $realisasi = 0.0;
+            for ($m = $g['from']; $m <= $g['to']; $m++) {
+                $realisasi += (float) ($rows[$m] ?? 0);
+            }
             $persentase = $totalRencanaBiaya > 0 ? round(($realisasi / $totalRencanaBiaya) * 100, 2) : 0;
 
             return [
-                'label' => $label,
+                'label'      => $g['label'],
                 'persentase' => max(0, $persentase),
-                'realisasi' => $realisasi,
+                'realisasi'  => $realisasi,
             ];
         })->values();
     }
 
-    private function buildPilarSummary($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null)
+    private function buildPilarSummary($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null, $ownedByUserId = null)
     {
         $kegiatanIds = $this->buildKegiatanQuery(
             $selectedUserId,
             $selectedDivisiId,
             $selectedPilarId,
-            $forcedDivisiId
+            $forcedDivisiId,
+            $ownedByUserId
         )
             ->pluck('id');
 
@@ -273,16 +383,20 @@ class DashboardController extends Controller
             ->whereIn('id', $canonicalPilarIds)
             ->when($selectedPilarId, fn($q) => $q->where('id', $selectedPilarId))
             ->orderBy('nama')
-            ->get(['id', 'nama']);
+            ->get(['id', 'nama', 'warna', 'icon']);
 
         if ($kegiatanIds->isEmpty()) {
-            return $pilars->map(function ($p, $index) {
-                $icons = ['AP', 'EK', 'SD', 'IN', 'KM', 'KR'];
+            return $pilars->map(function ($p) {
+                $warna = is_string($p->warna) && preg_match('/^#[0-9A-Fa-f]{6}$/', $p->warna)
+                    ? strtoupper($p->warna)
+                    : strtoupper(Pilar::colorForName($p->nama));
+                $icon = trim((string) ($p->icon ?? ''));
 
                 return [
                 'id' => $p->id,
                 'nama' => $p->nama,
-                'icon' => $icons[$index % count($icons)],
+                'icon' => $icon !== '' ? $icon : Pilar::iconForName($p->nama),
+                'color' => $warna,
                 'total_anggaran' => 0,
                 'total_realisasi' => 0,
                 'sisa' => 0,
@@ -292,30 +406,36 @@ class DashboardController extends Controller
         }
 
         $anggaranByPilar = Kegiatan::query()
-            ->join('kegiatan_pilar', 'kegiatans.id', '=', 'kegiatan_pilar.kegiatan_id')
+            ->join('programs', 'programs.id', '=', 'kegiatans.program_id')
             ->whereIn('kegiatans.id', $kegiatanIds)
-            ->groupBy('kegiatan_pilar.pilar_id')
-            ->selectRaw('kegiatan_pilar.pilar_id, COALESCE(SUM(kegiatans.rencana_biaya), 0) as total_anggaran')
-            ->pluck('total_anggaran', 'kegiatan_pilar.pilar_id');
+            ->whereNotNull('programs.pilar_id')
+            ->groupBy('programs.pilar_id')
+            ->selectRaw('programs.pilar_id, COALESCE(SUM(kegiatans.rencana_biaya), 0) as total_anggaran')
+            ->pluck('total_anggaran', 'programs.pilar_id');
 
         $realisasiByPilar = Realisasi::query()
             ->join('kegiatans', 'kegiatans.id', '=', 'realisasis.kegiatan_id')
-            ->join('kegiatan_pilar', 'kegiatans.id', '=', 'kegiatan_pilar.kegiatan_id')
+            ->join('programs', 'programs.id', '=', 'kegiatans.program_id')
             ->whereIn('kegiatans.id', $kegiatanIds)
-            ->groupBy('kegiatan_pilar.pilar_id')
-            ->selectRaw('kegiatan_pilar.pilar_id, COALESCE(SUM(realisasis.realisasi_biaya), 0) as total_realisasi')
-            ->pluck('total_realisasi', 'kegiatan_pilar.pilar_id');
+            ->whereNotNull('programs.pilar_id')
+            ->groupBy('programs.pilar_id')
+            ->selectRaw('programs.pilar_id, COALESCE(SUM(realisasis.realisasi_biaya), 0) as total_realisasi')
+            ->pluck('total_realisasi', 'programs.pilar_id');
 
-        return $pilars->map(function ($p, $index) use ($anggaranByPilar, $realisasiByPilar) {
+        return $pilars->map(function ($p) use ($anggaranByPilar, $realisasiByPilar) {
             $anggaran = (float) ($anggaranByPilar[$p->id] ?? 0);
             $realisasi = (float) ($realisasiByPilar[$p->id] ?? 0);
             $persentase = $anggaran > 0 ? round(($realisasi / $anggaran) * 100, 2) : 0;
-            $icons = ['AP', 'EK', 'SD', 'IN', 'KM', 'KR'];
+            $warna = is_string($p->warna) && preg_match('/^#[0-9A-Fa-f]{6}$/', $p->warna)
+                ? strtoupper($p->warna)
+                : strtoupper(Pilar::colorForName($p->nama));
+            $icon = trim((string) ($p->icon ?? ''));
 
             return [
                 'id' => $p->id,
                 'nama' => $p->nama,
-                'icon' => $icons[$index % count($icons)],
+                'icon' => $icon !== '' ? $icon : Pilar::iconForName($p->nama),
+                'color' => $warna,
                 'total_anggaran' => $anggaran,
                 'total_realisasi' => $realisasi,
                 'sisa' => $anggaran - $realisasi,
@@ -324,7 +444,7 @@ class DashboardController extends Controller
         })->sortByDesc('total_anggaran')->values();
     }
 
-    private function buildDivisiSummary($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null)
+    private function buildDivisiSummary($selectedUserId = null, $selectedDivisiId = null, $selectedPilarId = null, $forcedDivisiId = null, $ownedByUserId = null)
     {
         $canonicalDivisiIds = DB::table('divisis')
             ->selectRaw('MIN(id) as id')
@@ -337,11 +457,21 @@ class DashboardController extends Controller
             ->orderBy('nama')
             ->get(['id', 'nama']);
 
-        return $divisis->map(function ($divisi) use ($selectedUserId, $selectedPilarId) {
+        return $divisis->map(function ($divisi) use ($selectedUserId, $selectedPilarId, $ownedByUserId) {
             $kegiatanQuery = Kegiatan::query()
                 ->where('divisi_id', $divisi->id)
                 ->when($selectedUserId, fn($q) => $q->whereHas('program', fn($q2) => $q2->where('user_id', $selectedUserId)))
-                ->when($selectedPilarId, fn($q) => $q->whereHas('pilars', fn($q2) => $q2->where('pilars.id', $selectedPilarId)));
+                ->when($ownedByUserId, function ($q) use ($ownedByUserId) {
+                    return $q->whereExists(function ($sub) use ($ownedByUserId) {
+                        $sub->selectRaw('1')
+                            ->from('activity_logs')
+                            ->whereColumn('activity_logs.subject_id', 'kegiatans.id')
+                            ->where('activity_logs.subject_type', Kegiatan::class)
+                            ->where('activity_logs.user_id', $ownedByUserId)
+                            ->whereIn('activity_logs.action', ['create', 'submit']);
+                    });
+                })
+                ->when($selectedPilarId, fn($q) => $q->whereHas('program', fn($q2) => $q2->where('pilar_id', $selectedPilarId)));
 
             $kegiatanIds = (clone $kegiatanQuery)->pluck('id');
             $totalAnggaran = (float) ((clone $kegiatanQuery)->sum('rencana_biaya') ?? 0);
@@ -352,9 +482,19 @@ class DashboardController extends Controller
 
             $jumlahProgram = Program::query()
                 ->when($selectedUserId, fn($q) => $q->where('user_id', $selectedUserId))
-                ->whereHas('kegiatans', function ($q) use ($divisi, $selectedPilarId) {
+                ->whereHas('kegiatans', function ($q) use ($divisi, $selectedPilarId, $ownedByUserId) {
                     $q->where('divisi_id', $divisi->id)
-                        ->when($selectedPilarId, fn($q2) => $q2->whereHas('pilars', fn($q3) => $q3->where('pilars.id', $selectedPilarId)));
+                        ->when($ownedByUserId, function ($q2) use ($ownedByUserId) {
+                            $q2->whereExists(function ($sub) use ($ownedByUserId) {
+                                $sub->selectRaw('1')
+                                    ->from('activity_logs')
+                                    ->whereColumn('activity_logs.subject_id', 'kegiatans.id')
+                                    ->where('activity_logs.subject_type', Kegiatan::class)
+                                    ->where('activity_logs.user_id', $ownedByUserId)
+                                    ->whereIn('activity_logs.action', ['create', 'submit']);
+                            });
+                        })
+                        ->when($selectedPilarId, fn($q2) => $q2->whereHas('program', fn($q3) => $q3->where('pilar_id', $selectedPilarId)));
                 })
                 ->count();
 

@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -21,6 +22,7 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
 {
     private const HEADER_ROW = 5;
     private const FIRST_DATA_ROW = 6;
+    private const START_COLUMN = 'B';
 
     public function __construct(
         private readonly string $title,
@@ -43,7 +45,7 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
 
     public function styles(Worksheet $sheet): array
     {
-        $highestColumn = $sheet->getHighestColumn();
+        $highestColumn = $this->shiftColumn($sheet->getHighestColumn(), 1);
         $highestRow = $sheet->getHighestRow();
 
         return [
@@ -54,7 +56,7 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
                     'startColor' => ['rgb' => '0F3C73'],
                 ],
             ],
-            "A" . self::HEADER_ROW . ":{$highestColumn}{$highestRow}" => [
+            self::START_COLUMN . self::HEADER_ROW . ":{$highestColumn}{$highestRow}" => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -76,6 +78,7 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $sheet->insertNewRowBefore(1, self::HEADER_ROW - 1);
+                $sheet->insertNewColumnBefore('A', 1);
 
                 $highestColumn = $sheet->getHighestColumn();
                 $highestRow = $sheet->getHighestRow();
@@ -86,6 +89,8 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
                 $titleRow = $highestColumnIndex >= 3 ? 1 : 2;
                 $sheetTitleRow = $highestColumnIndex >= 3 ? 2 : 3;
                 $subtitleRow = $highestColumnIndex >= 3 ? 3 : 4;
+
+                $headerStartColumn = $this->shiftColumn($headerStartColumn, 1);
 
                 $sheet->setCellValue("{$headerStartColumn}{$titleRow}", 'Resume PPM Bayan');
                 $sheet->setCellValue("{$headerStartColumn}{$sheetTitleRow}", $this->title);
@@ -105,7 +110,7 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
                 if (is_file($logoIconPath)) {
                     $icon = new Drawing();
                     $icon->setPath($logoIconPath);
-                    $icon->setCoordinates('A1');
+                    $icon->setCoordinates('B1');
                     $icon->setHeight(40);
                     $icon->setWorksheet($sheet);
                 }
@@ -113,43 +118,52 @@ class ResumeArraySheet implements FromArray, ShouldAutoSize, WithHeadings, WithS
                 if (is_file($logoTextPath)) {
                     $wordmark = new Drawing();
                     $wordmark->setPath($logoTextPath);
-                    $wordmark->setCoordinates('B1');
+                    $wordmark->setCoordinates('C1');
                     $wordmark->setHeight(28);
                     $wordmark->setOffsetY(6);
                     $wordmark->setWorksheet($sheet);
                 }
 
-                $sheet->freezePane('A' . self::FIRST_DATA_ROW);
-                $sheet->getStyle("A" . self::HEADER_ROW . ":{$highestColumn}" . self::HEADER_ROW)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle("{$headerStartColumn}{$titleRow}:{$headerStartColumn}{$sheetTitleRow}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('0F3C73'));
+                $sheet->freezePane(self::START_COLUMN . self::FIRST_DATA_ROW);
+                $sheet->getStyle(self::START_COLUMN . self::HEADER_ROW . ":{$highestColumn}" . self::HEADER_ROW)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle(self::START_COLUMN . "1:{$highestColumn}{$highestRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle("{$headerStartColumn}{$titleRow}:{$headerStartColumn}{$sheetTitleRow}")->getFont()->setBold(true)->setColor(new Color('0F3C73'));
                 $sheet->getStyle("{$headerStartColumn}{$titleRow}")->getFont()->setSize(16);
                 $sheet->getStyle("{$headerStartColumn}{$sheetTitleRow}")->getFont()->setSize(11);
-                $sheet->getStyle("{$headerStartColumn}{$subtitleRow}")->getFont()->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('6B7280'));
-                $sheet->getStyle("A" . self::HEADER_ROW . ":{$highestColumn}{$highestRow}")
+                $sheet->getStyle("{$headerStartColumn}{$subtitleRow}")->getFont()->setSize(9)->setColor(new Color('6B7280'));
+                $sheet->getStyle(self::START_COLUMN . self::HEADER_ROW . ":{$highestColumn}{$highestRow}")
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN)
-                    ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('D1D5DB'));
+                    ->setColor(new Color('D1D5DB'));
 
                 foreach ($this->currencyColumns as $column) {
-                    $sheet->getStyle("{$column}" . self::FIRST_DATA_ROW . ":{$column}{$highestRow}")
+                    $shiftedColumn = $this->shiftColumn($column, 1);
+                    $sheet->getStyle("{$shiftedColumn}" . self::FIRST_DATA_ROW . ":{$shiftedColumn}{$highestRow}")
                         ->getNumberFormat()
                         ->setFormatCode('#,##0');
-                    $sheet->getStyle("{$column}" . self::FIRST_DATA_ROW . ":{$column}{$highestRow}")
+                    $sheet->getStyle("{$shiftedColumn}" . self::FIRST_DATA_ROW . ":{$shiftedColumn}{$highestRow}")
                         ->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
                 foreach ($this->percentColumns as $column) {
-                    $sheet->getStyle("{$column}" . self::FIRST_DATA_ROW . ":{$column}{$highestRow}")
+                    $shiftedColumn = $this->shiftColumn($column, 1);
+                    $sheet->getStyle("{$shiftedColumn}" . self::FIRST_DATA_ROW . ":{$shiftedColumn}{$highestRow}")
                         ->getNumberFormat()
                         ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
-                    $sheet->getStyle("{$column}" . self::FIRST_DATA_ROW . ":{$column}{$highestRow}")
+                    $sheet->getStyle("{$shiftedColumn}" . self::FIRST_DATA_ROW . ":{$shiftedColumn}{$highestRow}")
                         ->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
             },
         ];
+    }
+
+    private function shiftColumn(string $column, int $offset): string
+    {
+        $index = Coordinate::columnIndexFromString($column);
+
+        return Coordinate::stringFromColumnIndex($index + $offset);
     }
 }
