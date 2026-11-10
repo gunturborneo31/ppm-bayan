@@ -70,8 +70,6 @@ class RealisasiController extends Controller
         $kegiatans = $kegiatansQuery->get();
 
         $programSpendings = $orderedRealisasis
-            ->groupBy(fn (Realisasi $row) => $row->kegiatan_lokasi_id ? 'lokasi:' . $row->kegiatan_lokasi_id : 'kegiatan:' . $row->kegiatan_id)
-            ->map(fn ($items) => $items->first())
             ->filter(fn (Realisasi $row) => $row->kegiatan?->program_id)
             ->groupBy(fn (Realisasi $row) => (int) $row->kegiatan->program_id)
             ->map(fn ($items, $programId) => [
@@ -126,8 +124,8 @@ class RealisasiController extends Controller
         $data['periode_id'] = $periode->id;
 
         // Alert: realisasi biaya > rencana biaya
-        if (isset($data['realisasi_biaya']) && $data['realisasi_biaya'] > $kegiatanLokasi->rencana_biaya) {
-            return back()->withErrors(['realisasi_biaya' => 'Realisasi biaya melebihi rencana biaya lokasi kegiatan.'])->with('warning', 'Peringatan: Realisasi biaya melebihi anggaran lokasi!');
+        if ($error = $this->budgetExceededError($kegiatanLokasi, (float) ($data['realisasi_biaya'] ?? 0))) {
+            return back()->withErrors(['realisasi_biaya' => $error])->with('warning', 'Peringatan: Realisasi biaya melebihi anggaran lokasi!');
         }
 
         $attachments = [
@@ -189,9 +187,18 @@ class RealisasiController extends Controller
 
         $data['periode_id'] = $periode->id;
 
-        $maxBiaya = (float) ($kegiatanLokasi?->rencana_biaya ?? $kegiatan->rencana_biaya);
-        if (isset($data['realisasi_biaya']) && $data['realisasi_biaya'] > $maxBiaya) {
-            return back()->withErrors(['realisasi_biaya' => 'Realisasi biaya melebihi rencana biaya lokasi kegiatan.']);
+        $biayaBaru = (float) ($data['realisasi_biaya'] ?? 0);
+        if ($kegiatanLokasi) {
+            $error = $this->budgetExceededError($kegiatanLokasi, $biayaBaru, $realisasi->id);
+        } else {
+            // Data lama tanpa lokasi: bandingkan dengan total realisasi kegiatan.
+            $terpakai = (float) $kegiatan->realisasis()->where('id', '!=', $realisasi->id)->sum('realisasi_biaya');
+            $error = ($terpakai + $biayaBaru) > (float) $kegiatan->rencana_biaya
+                ? 'Total realisasi biaya melebihi rencana biaya kegiatan.'
+                : null;
+        }
+        if ($error) {
+            return back()->withErrors(['realisasi_biaya' => $error]);
         }
 
         ActivityLog::create([
@@ -243,6 +250,22 @@ class RealisasiController extends Controller
             ->where('user_id', $user->id)
             ->whereIn('action', ['create', 'submit'])
             ->exists();
+    }
+
+    // Realisasi bersifat tambahan, jadi yang dibatasi adalah total semua input pada lokasi tersebut.
+    private function budgetExceededError(KegiatanLokasi $lokasi, float $biayaBaru, ?int $exceptRealisasiId = null): ?string
+    {
+        $terpakai = (float) Realisasi::where('kegiatan_lokasi_id', $lokasi->id)
+            ->when($exceptRealisasiId, fn ($q) => $q->where('id', '!=', $exceptRealisasiId))
+            ->sum('realisasi_biaya');
+        $anggaran = (float) $lokasi->rencana_biaya;
+
+        if (($terpakai + $biayaBaru) <= $anggaran) {
+            return null;
+        }
+
+        return 'Total realisasi biaya melebihi rencana biaya lokasi. Sisa anggaran: Rp '
+            . number_format(max(0, $anggaran - $terpakai), 0, ',', '.') . '.';
     }
 
     private function storeFiles(array $files, string $kategori, int $realisasiId): void

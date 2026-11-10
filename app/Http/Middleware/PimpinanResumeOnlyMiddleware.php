@@ -20,6 +20,11 @@ class PimpinanResumeOnlyMiddleware
         $allowedRoutePatterns = [
             'resume.*',
             'logout',
+            // Dibuka dari halaman Resume: detail kegiatan, komentar pimpinan, dan lampiran.
+            'kegiatan.show',
+            'kegiatan.comments.store',
+            'files.preview',
+            'files.download',
         ];
 
         foreach ($allowedRoutePatterns as $pattern) {

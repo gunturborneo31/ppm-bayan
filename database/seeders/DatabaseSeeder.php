@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityLog;
 use App\Models\Divisi;
 use App\Models\Kegiatan;
 use App\Models\Periode;
@@ -62,6 +63,17 @@ class DatabaseSeeder extends Seeder
                 'password'  => Hash::make('password123'),
                 'role'      => 'divisi',
                 'divisi_id' => $divisiB->id,
+            ]
+        );
+
+        // Pimpinan: hanya akses Resume, detail kegiatan, dan komentar
+        User::updateOrCreate(
+            ['email' => 'pimpinan@ppm.com'],
+            [
+                'name'      => 'Pimpinan PPM',
+                'password'  => Hash::make('password123'),
+                'role'      => 'pimpinan',
+                'divisi_id' => null,
             ]
         );
 
@@ -150,6 +162,23 @@ class DatabaseSeeder extends Seeder
         );
         $keg3->pilars()->sync([$program2->pilar_id]);
 
+        // Kepemilikan kegiatan dibaca dari activity log (aksi create/submit),
+        // jadi kegiatan contoh perlu log agar terlihat oleh user divisinya.
+        foreach ([[$keg1, $userA], [$keg2, $userA], [$keg3, $userB]] as [$kegiatan, $pemilik]) {
+            ActivityLog::firstOrCreate(
+                [
+                    'user_id'      => $pemilik->id,
+                    'action'       => 'create',
+                    'subject_type' => Kegiatan::class,
+                    'subject_id'   => $kegiatan->id,
+                ],
+                [
+                    'module'      => 'kegiatan',
+                    'description' => "Kegiatan '{$kegiatan->nama}' dibuat (data contoh).",
+                ]
+            );
+        }
+
         // Realisasi for keg1
         \App\Models\Realisasi::updateOrCreate(
             [
@@ -183,6 +212,12 @@ class DatabaseSeeder extends Seeder
                 'role'     => 'superadmin',
             ]
         );
+
+        // Konten portal publik di bawah memakai create(); lewati jika sudah pernah di-seed
+        // agar `db:seed` bisa dijalankan ulang tanpa error slug duplikat.
+        if (KategoriBerita::where('slug', 'berita-csr')->exists()) {
+            return;
+        }
 
         // ===== KATEGORI BERITA =====
         $katCSR     = KategoriBerita::create(['nama' => 'Berita CSR',              'slug' => 'berita-csr']);

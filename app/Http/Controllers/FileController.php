@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\FileLampiran;
+use App\Models\Kegiatan;
+use App\Models\Realisasi;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +22,12 @@ class FileController extends Controller
             'kegiatan_id'  => 'nullable|exists:kegiatans,id',
             'realisasi_id' => 'nullable|exists:realisasis,id',
         ]);
+
+        $kegiatanId = $request->kegiatan_id
+            ?? ($request->realisasi_id ? Realisasi::find($request->realisasi_id)?->kegiatan_id : null);
+        if (!$this->canManage($kegiatanId)) {
+            abort(403, 'Anda hanya dapat mengunggah file untuk kegiatan yang Anda ajukan.');
+        }
 
         $file = $request->file('file');
         $path = $file->store('uploads/' . date('Y/m'), 'public');
@@ -64,6 +72,11 @@ class FileController extends Controller
 
     public function destroy(FileLampiran $file)
     {
+        $user = Auth::user();
+        if (!$user->isSuperadmin() && (int) $file->uploaded_by !== (int) $user->id) {
+            abort(403, 'Anda hanya dapat menghapus file yang Anda unggah.');
+        }
+
         Storage::disk('public')->delete($file->file_path);
 
         ActivityLog::create([
@@ -77,5 +90,23 @@ class FileController extends Controller
 
         $file->delete();
         return back()->with('success', 'File berhasil dihapus.');
+    }
+
+    // Superadmin boleh semua; user lain hanya untuk kegiatan yang ia ajukan.
+    private function canManage(?int $kegiatanId): bool
+    {
+        $user = Auth::user();
+        if ($user->isSuperadmin()) {
+            return true;
+        }
+        if (!$kegiatanId) {
+            return false;
+        }
+
+        return ActivityLog::where('subject_type', Kegiatan::class)
+            ->where('subject_id', $kegiatanId)
+            ->where('user_id', $user->id)
+            ->whereIn('action', ['create', 'submit'])
+            ->exists();
     }
 }

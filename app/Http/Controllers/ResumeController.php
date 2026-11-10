@@ -12,6 +12,7 @@ use App\Models\Realisasi;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -640,7 +641,16 @@ class ResumeController extends Controller
             ->orderByDesc('id')
             ->get()
             ->groupBy(fn (Realisasi $row) => $row->kegiatan_lokasi_id ? 'lokasi:' . $row->kegiatan_lokasi_id : 'kegiatan:' . $row->kegiatan_id)
-            ->map(fn ($items) => $items->first())
+            ->map(function ($items) {
+                // Tiap input realisasi bersifat tambahan (sama seperti Dashboard & halaman Realisasi):
+                // biaya/output dijumlahkan, lampiran digabung, tanggal & keterangan dari input terbaru.
+                $row = clone $items->first();
+                $row->realisasi_biaya = (float) $items->sum('realisasi_biaya');
+                $row->realisasi_output = (float) $items->sum('realisasi_output');
+                $row->setRelation('files', new EloquentCollection($items->flatMap(fn (Realisasi $item) => $item->files)->values()->all()));
+
+                return $row;
+            })
             ->values();
     }
 
